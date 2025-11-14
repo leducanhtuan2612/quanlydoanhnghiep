@@ -1,8 +1,16 @@
 # app/models.py
 
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, Date,
-    Boolean, ForeignKey, DateTime, Time
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    Date,
+    Boolean,
+    ForeignKey,
+    DateTime,
+    Time,
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -36,11 +44,18 @@ class Employee(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # 🔗 Quan hệ 1 - N: Employee → Attendance
+    # 🔗 1 - N: Employee → Attendance
     attendances = relationship(
         "Attendance",
         back_populates="employee",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+    )
+
+    # 🔗 1 - N: Employee → BenefitRegistration
+    benefit_registrations = relationship(
+        "BenefitRegistration",
+        back_populates="employee",
+        cascade="all, delete-orphan",
     )
 
 
@@ -86,7 +101,11 @@ class Inventory(Base):
     __tablename__ = "inventory"
 
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     location = Column(String(100), nullable=True)
     quantity = Column(Integer, default=0)
     date_added = Column(Date, nullable=True)
@@ -239,3 +258,53 @@ class Attendance(Base):
 
     # 1 - N: Attendance → Employee
     employee = relationship("Employee", back_populates="attendances")
+
+
+# =====================================================
+# 🎁 PHÚC LỢI (BENEFITS)
+# =====================================================
+class BenefitProgram(Base):
+    __tablename__ = "benefit_programs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+    registration_start = Column(Date, nullable=True)
+    registration_end = Column(Date, nullable=True)
+
+    location = Column(String(255), nullable=True)
+
+    # open / closed
+    status = Column(String(20), default="open")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    registrations = relationship(
+        "BenefitRegistration",
+        back_populates="benefit",
+        cascade="all, delete",
+    )
+
+
+class BenefitRegistration(Base):
+    __tablename__ = "benefit_registrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    benefit_id = Column(
+        Integer,
+        ForeignKey("benefit_programs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    employee_id = Column(
+        Integer,
+        ForeignKey("employees.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    registered_at = Column(DateTime, default=datetime.utcnow)
+    status = Column(String(20), default="registered")  # registered / cancelled
+
+    benefit = relationship("BenefitProgram", back_populates="registrations")
+    employee = relationship("Employee", back_populates="benefit_registrations")

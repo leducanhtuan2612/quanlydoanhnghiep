@@ -26,10 +26,11 @@ import Revenue from "./pages/Revenue";
 import CRMPage from "./pages/CRM";
 import Settings from "./pages/settings/Settings";
 import AttendancePage from "./pages/attendance/Attendance";
-
+import AdminBenefitsPage from "./pages/admin/benefits/AdminBenefitsPage";
 // Context
 import { SettingsProvider } from "./context/SettingsContext";
-
+import EmployeeBenefits from "./pages/employees/EmployeeBenefits";
+import BenefitsPage from "./pages/benefits/BenefitsPage";
 // -----------------------
 // ROUTER CONFIG
 // -----------------------
@@ -46,12 +47,12 @@ const router = createBrowserRouter([
       { path: "employees", element: <Employees /> },
       { path: "employees/profile/:id", element: <EmployeeProfile /> },
      { path: "attendance/:id", element: <AttendancePage /> },
-
-
+   { path: "employees/:id/benefits", element: <EmployeeBenefits />},
+   {  path: "benefits/:id", element: <BenefitsPage />},
       // ADMIN
       { path: "admin/users", element: <AdminUsers /> },
       { path: "admin/roles", element: <Roles /> },
-
+      { path:"/admin/benefits", element: <AdminBenefitsPage />},
       // CRM / BUSINESS
       { path: "customers", element: <Customers /> },
       { path: "products", element: <Products /> },

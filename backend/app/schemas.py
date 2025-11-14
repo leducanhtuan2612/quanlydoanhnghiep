@@ -1,26 +1,18 @@
-from datetime import date, datetime
-from pydantic import BaseModel
+# app/schemas.py
+from datetime import date, datetime, time
 from typing import Optional, List
-
-from datetime import date
-from typing import Optional
-
-
-# ==========================================================
-# 👩‍💼 EMPLOYEES (CHUẨN ĐẦY ĐỦ)
-# ==========================================================
 from pydantic import BaseModel
-from typing import Optional
-from datetime import date
 
 
+# ==========================================================
+# 🧍 EMPLOYEES
+# ==========================================================
 class EmployeeBase(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     department: Optional[str] = None
     active: Optional[bool] = None
 
-    # Hồ sơ chi tiết
     avatar: Optional[str] = None
     phone: Optional[str] = None
     gender: Optional[str] = None
@@ -38,7 +30,6 @@ class EmployeeCreate(EmployeeBase):
 
 
 class EmployeeUpdate(EmployeeBase):
-    """Cho phép update từng trường (không bắt buộc)"""
     pass
 
 
@@ -47,6 +38,8 @@ class EmployeeOut(EmployeeBase):
 
     class Config:
         from_attributes = True
+
+
 class EmployeePatch(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
@@ -56,12 +49,13 @@ class EmployeePatch(BaseModel):
     class Config:
         from_attributes = True
 
+
 # ==========================================================
 # 👥 CUSTOMERS
 # ==========================================================
 class CustomerBase(BaseModel):
     name: str
-    email: Optional[str] = None          # ❗ FIX email không validate nữa
+    email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
 
@@ -159,9 +153,6 @@ class OrderOut(OrderBase):
         from_attributes = True
 
 
-# ==========================================================
-# 📐 ORDER SHORT (CRM)
-# ==========================================================
 class OrderShort(BaseModel):
     id: int
     date: date
@@ -192,7 +183,7 @@ class ReportOut(ReportBase):
 
 
 # ==========================================================
-# ⚙️ SETTINGS
+# ⚙ SETTINGS
 # ==========================================================
 class SettingBase(BaseModel):
     key: str
@@ -211,7 +202,7 @@ class SettingOut(SettingBase):
 
 
 # ==========================================================
-# 👨‍💻 ADMINS
+# 👤 ADMINS
 # ==========================================================
 class AdminBase(BaseModel):
     username: str
@@ -242,7 +233,7 @@ class AdminOut(AdminBase):
 
 
 # ==========================================================
-# 📝 CRM – CUSTOMER NOTES
+# 📝 CUSTOMER NOTES
 # ==========================================================
 class CustomerNoteBase(BaseModel):
     title: str
@@ -264,7 +255,7 @@ class CustomerNoteOut(CustomerNoteBase):
 
 
 # ==========================================================
-# 📨 CRM – EMAIL TEMPLATES
+# 📨 EMAIL TEMPLATE & CAMPAIGN
 # ==========================================================
 class EmailTemplateBase(BaseModel):
     name: str
@@ -284,9 +275,6 @@ class EmailTemplateOut(EmailTemplateBase):
         from_attributes = True
 
 
-# ==========================================================
-# 📣 CRM – EMAIL CAMPAIGNS
-# ==========================================================
 class EmailCampaignBase(BaseModel):
     name: str
     template_id: int
@@ -305,14 +293,11 @@ class EmailCampaignOut(EmailCampaignBase):
         from_attributes = True
 
 
-# ==========================================================
-# 📬 CRM – EMAIL LOGS
-# ==========================================================
 class EmailLogOut(BaseModel):
     id: int
     campaign_id: int
     customer_id: int
-    email: Optional[str] = None            # ❗ FIX EMAIL
+    email: Optional[str] = None
     status: str
     error_message: Optional[str] = None
     sent_at: Optional[datetime] = None
@@ -322,7 +307,7 @@ class EmailLogOut(BaseModel):
 
 
 # ==========================================================
-# 🔍 CRM – CUSTOMER DETAIL
+# 🧾 CRM DETAIL
 # ==========================================================
 class CustomerDetailCRM(BaseModel):
     customer: CustomerOut
@@ -333,46 +318,9 @@ class CustomerDetailCRM(BaseModel):
         from_attributes = True
 
 
-class EmployeeProfileBase(BaseModel):
-    name: str
-    email: str
-    phone: Optional[str]
-    gender: Optional[str]
-    dob: Optional[date]
-    department: str
-    position: Optional[str]
-    address: Optional[str]
-    join_date: Optional[date]
-    status: Optional[str] = "Đang làm việc"
-    avatar: Optional[str] = None
-
-class EmployeeProfileCreate(EmployeeProfileBase):
-    pass
-
-class EmployeeProfileUpdate(BaseModel):
-    name: Optional[str]
-    phone: Optional[str]
-    gender: Optional[str]
-    dob: Optional[date]
-    department: Optional[str]
-    position: Optional[str]
-    address: Optional[str]
-    join_date: Optional[date]
-    status: Optional[str]
-    avatar: Optional[str]
-
-class EmployeeProfileOut(EmployeeProfileBase):
-    id: int
-    class Config:
-        orm_mode = True
-
-
-# app/schemas/attendance.py
-from pydantic import BaseModel
-from datetime import date, time
-from typing import Optional
-
-
+# ==========================================================
+# 🕒 ATTENDANCE
+# ==========================================================
 class AttendanceOut(BaseModel):
     id: int
     employee_name: str
@@ -383,3 +331,49 @@ class AttendanceOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+# ==========================================================
+# 🎁 BENEFITS (PHÚC LỢI)
+# ==========================================================
+class BenefitProgramBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    registration_start: Optional[date] = None
+    registration_end: Optional[date] = None
+    location: Optional[str] = None
+    status: Optional[str] = "open"  # open / closed
+
+
+class BenefitProgramCreate(BenefitProgramBase):
+    pass
+
+
+class BenefitProgramUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    registration_start: Optional[date] = None
+    registration_end: Optional[date] = None
+    location: Optional[str] = None
+    status: Optional[str] = None
+
+
+class BenefitProgramOut(BenefitProgramBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    is_registered: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class BenefitRegistrationOut(BaseModel):
+    id: int
+    benefit_id: int
+    employee_id: int
+    registered_at: datetime
+    status: str
+
+    class Config:
+        from_attributes = True

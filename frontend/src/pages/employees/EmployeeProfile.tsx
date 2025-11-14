@@ -44,7 +44,7 @@ export default function EmployeeProfile() {
     ? `http://127.0.0.1:8000${emp.avatar}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(
         emp.name
-      )}&size=220&background=f3f4f6&color=0f172a`;
+      )}&size=260&background=f3f4f6&color=0f172a`;
 
   return (
     <div className="flex w-full">
@@ -57,7 +57,7 @@ export default function EmployeeProfile() {
           <MenuItem label="Hồ sơ" active />
           <MenuItem label="Chấm công" onClick={() => navigate(`/attendance/${id}`)} />
           <MenuItem label="Tiền lương" />
-          <MenuItem label="Phúc lợi" />
+          <MenuItem label="Phúc lợi" onClick={() => navigate(`/benefits/${id}`)} />
           <MenuItem label="Đồng phục" />
         </div>
       </aside>
@@ -65,7 +65,7 @@ export default function EmployeeProfile() {
       {/* MAIN */}
       <div className="flex-1 bg-slate-50 min-h-screen overflow-auto">
 
-        {/* back */}
+        {/* Back button */}
         <div className="p-6">
           <button
             onClick={() => navigate("/employees")}
@@ -79,7 +79,7 @@ export default function EmployeeProfile() {
         {/* BANNER + AVATAR */}
         <div className="relative w-full mx-6">
 
-          {/* banner */}
+          {/* Banner */}
           <div className="w-full h-60 rounded-xl overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200"
@@ -87,12 +87,12 @@ export default function EmployeeProfile() {
             />
           </div>
 
-          {/* avatar */}
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-24 z-[200]">
+          {/* Avatar */}
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-28 z-[200]">
             <div className="relative">
               <img
                 src={avatarUrl}
-                className="w-56 h-56 rounded-full border-[6px] border-white shadow-2xl object-cover"
+                className="w-64 h-64 rounded-full border-[8px] border-white shadow-2xl object-cover"
               />
 
               <label className="absolute bottom-3 right-3 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full cursor-pointer shadow-lg">
@@ -110,9 +110,9 @@ export default function EmployeeProfile() {
           </div>
         </div>
 
-        {/* NAME + BUTTON */}
-        <div className="mt-32 text-center space-y-1">
-          <h1 className="text-2xl font-bold text-slate-800">{emp.name}</h1>
+        {/* NAME */}
+        <div className="mt-36 text-center space-y-1">
+          <h1 className="text-3xl font-bold text-slate-800">{emp.name}</h1>
 
           <div className="flex justify-center mt-4">
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700">
@@ -123,7 +123,7 @@ export default function EmployeeProfile() {
         </div>
 
         {/* INFO */}
-        <div className="px-6 py-10">
+        <div className="px-6 py-14">
           <div className="bg-white border rounded-xl p-8 shadow-sm">
 
             <h3 className="font-semibold text-lg mb-6">Thông tin cơ bản</h3>
@@ -153,12 +153,22 @@ export default function EmployeeProfile() {
 }
 
 /* MENU ITEM */
-function MenuItem({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
+function MenuItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <div
       onClick={onClick}
       className={`px-3 py-2 rounded-lg cursor-pointer transition ${
-        active ? "bg-blue-600 text-white shadow" : "hover:bg-slate-100 text-slate-700"
+        active
+          ? "bg-blue-600 text-white shadow"
+          : "hover:bg-slate-100 text-slate-700"
       }`}
     >
       {label}

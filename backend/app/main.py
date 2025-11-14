@@ -15,7 +15,8 @@ from app.routers import (
     orders,
     ai_chat,
     crm,
-    attendance      # ⭐ THÊM DÒNG NÀY
+    attendance  ,  
+    benefits,   # ⭐ THÊM DÒNG NÀY
 )
 
 
@@ -55,7 +56,7 @@ app.include_router(orders.router)
 app.include_router(ai_chat.router)
 app.include_router(crm.router)
 app.include_router(attendance.router)   # ⭐ THÊM DÒNG NÀY
-
+app.include_router(benefits.router) 
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
 app.mount("/static", StaticFiles(directory="static"), name="static")
