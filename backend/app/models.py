@@ -1,0 +1,241 @@
+# app/models.py
+
+from sqlalchemy import (
+    Column, Integer, String, Float, Text, Date,
+    Boolean, ForeignKey, DateTime, Time
+)
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.database import Base
+
+
+# =====================================================
+# 👨‍💼 BẢNG NHÂN VIÊN
+# =====================================================
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+
+    department = Column(String(50), nullable=True)
+    active = Column(Boolean, default=True)
+
+    avatar = Column(String(255), nullable=True)
+    phone = Column(String(20), nullable=True)
+    gender = Column(String(10), nullable=True)
+    birthday = Column(Date, nullable=True)
+
+    start_date = Column(Date, nullable=True)
+    position = Column(String(100), nullable=True)
+    citizen_id = Column(String(30), nullable=True)
+    address = Column(String(255), nullable=True)
+    notes = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 🔗 Quan hệ 1 - N: Employee → Attendance
+    attendances = relationship(
+        "Attendance",
+        back_populates="employee",
+        cascade="all, delete-orphan"
+    )
+
+
+# =====================================================
+# 👥 BẢNG KHÁCH HÀNG
+# =====================================================
+class Customer(Base):
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    address = Column(String(255), nullable=True)
+
+    orders = relationship("Order", back_populates="customer", cascade="all, delete")
+    notes = relationship("CustomerNote", back_populates="customer", cascade="all, delete")
+    email_logs = relationship("EmailLog", back_populates="customer", cascade="all, delete")
+
+
+# =====================================================
+# 📦 BẢNG SẢN PHẨM
+# =====================================================
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(150), nullable=False)
+    category = Column(String(100), nullable=True)
+    price = Column(Float, nullable=False)
+    stock = Column(Integer, default=0)
+    description = Column(Text, nullable=True)
+    image_url = Column(String(255), nullable=True)
+
+    orders = relationship("Order", back_populates="product", cascade="all, delete")
+    inventories = relationship("Inventory", back_populates="product", cascade="all, delete")
+
+
+# =====================================================
+# 🏬 KHO HÀNG
+# =====================================================
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    location = Column(String(100), nullable=True)
+    quantity = Column(Integer, default=0)
+    date_added = Column(Date, nullable=True)
+    note = Column(Text, nullable=True)
+
+    product = relationship("Product", back_populates="inventories")
+
+
+# =====================================================
+# 🧾 ĐƠN HÀNG
+# =====================================================
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id", ondelete="SET NULL"))
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="SET NULL"))
+
+    date = Column(Date, nullable=False)
+    status = Column(String(50), default="Đang xử lý")
+    quantity = Column(Integer, default=1)
+    amount = Column(Float, nullable=False)
+    category = Column(String(100), nullable=True)
+    region = Column(String(100), nullable=True)
+
+    customer = relationship("Customer", back_populates="orders")
+    product = relationship("Product", back_populates="orders")
+
+
+# =====================================================
+# 📈 BÁO CÁO
+# =====================================================
+class Report(Base):
+    __tablename__ = "reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=True)
+
+
+# =====================================================
+# ⚙️ CÀI ĐẶT
+# =====================================================
+class Setting(Base):
+    __tablename__ = "settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(255), unique=True, nullable=False)
+    value = Column(String(255), nullable=True)
+
+
+# =====================================================
+# 👑 QUẢN TRỊ
+# =====================================================
+class Admin(Base):
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, nullable=False)
+    full_name = Column(String(100), nullable=True)
+    email = Column(String(100), nullable=True)
+    password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    role = Column(String(50), default="user")
+
+
+# =====================================================
+# 📝 CRM – GHI CHÚ KHÁCH HÀNG
+# =====================================================
+class CustomerNote(Base):
+    __tablename__ = "customer_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"))
+
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=True)
+    created_by = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    customer = relationship("Customer", back_populates="notes")
+
+
+# =====================================================
+# 📨 CRM – TEMPLATE EMAIL
+# =====================================================
+class EmailTemplate(Base):
+    __tablename__ = "email_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(150), unique=True, nullable=False)
+    subject = Column(String(200), nullable=False)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    campaigns = relationship("EmailCampaign", back_populates="template", cascade="all, delete")
+
+
+# =====================================================
+# 📣 CRM – CHIẾN DỊCH EMAIL
+# =====================================================
+class EmailCampaign(Base):
+    __tablename__ = "email_campaigns"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    template_id = Column(Integer, ForeignKey("email_templates.id", ondelete="CASCADE"))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    template = relationship("EmailTemplate", back_populates="campaigns")
+    logs = relationship("EmailLog", back_populates="campaign", cascade="all, delete")
+
+
+# =====================================================
+# 📬 CRM – LOG EMAIL
+# =====================================================
+class EmailLog(Base):
+    __tablename__ = "email_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(Integer, ForeignKey("email_campaigns.id", ondelete="CASCADE"))
+    customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"))
+
+    email = Column(String(150), nullable=False)
+    status = Column(String(50), default="pending")
+    error_message = Column(Text, nullable=True)
+    sent_at = Column(DateTime, nullable=True)
+
+    campaign = relationship("EmailCampaign", back_populates="logs")
+    customer = relationship("Customer", back_populates="email_logs")
+
+
+# =====================================================
+# 🕒 CHẤM CÔNG (ATTENDANCE)
+# =====================================================
+class Attendance(Base):
+    __tablename__ = "attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+
+    date = Column(Date, nullable=False)
+    check_in = Column(Time, nullable=True)
+    check_out = Column(Time, nullable=True)
+    status = Column(String(20), default="On time")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 1 - N: Attendance → Employee
+    employee = relationship("Employee", back_populates="attendances")
