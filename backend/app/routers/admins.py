@@ -1,23 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from app import models, schemas, database
 from typing import List
-from app.core.permissions import require_role  # 👈 thêm dòng này
+
+from app import models, schemas, database
+from app.core.permissions import require_role   # middleware kiểm tra quyền
 
 router = APIRouter(prefix="/admins", tags=["Admins"])
 get_db = database.get_db
 
 
-# 🟩 Lấy tất cả admin (chỉ admin mới được xem)
+# ============================================================
+# 🟩 LẤY DANH SÁCH NGƯỜI DÙNG (CHỈ ADMIN)
+# ============================================================
 @router.get("/", response_model=List[schemas.AdminOut])
 def get_admins(
     db: Session = Depends(get_db),
-    current_user=Depends(require_role(["admin"]))  # 👈 chỉ admin được
+    current_user=Depends(require_role(["admin"]))
 ):
     return db.query(models.Admin).all()
 
 
-# 🟦 Lấy admin theo ID (admin hoặc manager)
+# ============================================================
+# 🟦 LẤY 1 USER THEO ID (ADMIN + MANAGER)
+# ============================================================
 @router.get("/{admin_id}", response_model=schemas.AdminOut)
 def get_admin(
     admin_id: int,
@@ -30,13 +35,16 @@ def get_admin(
     return user
 
 
-# 🟨 Tạo admin mới (chỉ admin)
+# ============================================================
+# 🟨 TẠO USER (CHỈ ADMIN)
+# ============================================================
 @router.post("/", response_model=schemas.AdminOut)
 def create_admin(
     admin: schemas.AdminCreate,
     db: Session = Depends(get_db),
     current_user=Depends(require_role(["admin"]))
 ):
+
     new_user = models.Admin(**admin.dict())
     db.add(new_user)
     db.commit()
@@ -44,7 +52,9 @@ def create_admin(
     return new_user
 
 
-# 🟧 Cập nhật thông tin (admin hoặc manager)
+# ============================================================
+# 🟧 CẬP NHẬT USER (ADMIN + MANAGER)
+# ============================================================
 @router.put("/{admin_id}", response_model=schemas.AdminOut)
 def update_admin(
     admin_id: int,
@@ -64,7 +74,9 @@ def update_admin(
     return user
 
 
-# 🟥 Xóa admin (chỉ admin)
+# ============================================================
+# 🟥 XÓA USER (CHỈ ADMIN)
+# ============================================================
 @router.delete("/{admin_id}")
 def delete_admin(
     admin_id: int,
@@ -74,40 +86,59 @@ def delete_admin(
     user = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+
     db.delete(user)
     db.commit()
     return {"message": "Xóa người dùng thành công"}
 
 
-# 🟦 Cập nhật trạng thái hoạt động (admin)
+# ============================================================
+# 🔵 KHÓA / MỞ TÀI KHOẢN (CHỈ ADMIN)
+# FE gửi JSON: { "is_active": true/false }
+# ============================================================
 @router.put("/{admin_id}/active")
 def update_active(
     admin_id: int,
-    is_active: bool = Body(...),
+    data: dict = Body(...),   # 👈 Nhận JSON body đúng chuẩn FE
     db: Session = Depends(get_db),
     current_user=Depends(require_role(["admin"]))
 ):
     user = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+
+    is_active = data.get("is_active")
+    if is_active is None:
+        raise HTTPException(status_code=400, detail="Thiếu trường is_active")
+
     user.is_active = is_active
     db.commit()
     db.refresh(user)
-    return {"message": "Trạng thái người dùng đã được cập nhật."}
+
+    return {"message": "Cập nhật trạng thái thành công"}
 
 
-# 🟪 Cập nhật quyền (role) người dùng (chỉ admin)
+# ============================================================
+# 🟪 CẬP NHẬT ROLE (CHỈ ADMIN)
+# FE gửi JSON: { "role": "admin/manager/user" }
+# ============================================================
 @router.put("/{admin_id}/role")
 def update_role(
     admin_id: int,
-    role: str,
+    data: dict = Body(...),
     db: Session = Depends(get_db),
     current_user=Depends(require_role(["admin"]))
 ):
     user = db.query(models.Admin).filter(models.Admin.id == admin_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+
+    role = data.get("role")
+    if not role:
+        raise HTTPException(status_code=400, detail="Thiếu role")
+
     user.role = role
     db.commit()
     db.refresh(user)
-    return {"message": f"Đã cập nhật quyền thành {role}"}
+
+    return {"message": f"Đã cập nhật quyền thành '{role}'"}

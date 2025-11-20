@@ -19,8 +19,18 @@ export default function Users() {
   const [editing, setEditing] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Lấy token để dùng cho API yêu cầu quyền Admin
+  const token = localStorage.getItem("token");
+
+  // =============================
+  // GET LIST USERS (CÓ TOKEN)
+  // =============================
   useEffect(() => {
-    fetch(`${API}/admins`)
+    fetch(`${API}/admins`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setUsers(data);
@@ -30,15 +40,22 @@ export default function Users() {
       .finally(() => setLoading(false));
   }, []);
 
+  // =============================
+  // SAVE USER (THÊM / SỬA)
+  // =============================
   const saveUser = async (user: Omit<User, "id">, id?: number) => {
     const method = id ? "PUT" : "POST";
     const url = id ? `${API}/admins/${id}` : `${API}/admins`;
 
     const res = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // 🟢 BẮT BUỘC
+      },
       body: JSON.stringify(user),
     });
+
     const data = await res.json();
 
     if (res.ok) {
@@ -46,12 +63,24 @@ export default function Users() {
       else setUsers((prev) => [data, ...prev]);
       setOpen(false);
       setEditing(null);
-    } else alert(data.detail || "Lỗi khi lưu người dùng");
+    } else {
+      alert(data.detail || "Lỗi khi lưu người dùng");
+    }
   };
 
+  // =============================
+  // DELETE USER (CÓ TOKEN)
+  // =============================
   const deleteUser = async (id: number) => {
     if (!confirm("Bạn có chắc muốn xóa người dùng này?")) return;
-    await fetch(`${API}/admins/${id}`, { method: "DELETE" });
+
+    await fetch(`${API}/admins/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`, // 🟢 BẮT BUỘC
+      },
+    });
+
     setUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
@@ -116,6 +145,7 @@ export default function Users() {
                 </td>
               </tr>
             ))}
+
             {users.length === 0 && (
               <tr>
                 <td colSpan={5} className="text-center text-slate-500 py-4 italic">
@@ -185,11 +215,12 @@ function UserModal({
           <div>
             <label className="block text-sm text-slate-600 mb-1">Tên đăng nhập</label>
             <input
-              className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="w-full border rounded-lg px-3 py-2"
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
             />
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm text-slate-600 mb-1">Họ tên</label>
@@ -199,6 +230,7 @@ function UserModal({
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               />
             </div>
+
             <div>
               <label className="block text-sm text-slate-600 mb-1">Email</label>
               <input
@@ -208,6 +240,7 @@ function UserModal({
               />
             </div>
           </div>
+
           <div>
             <label className="block text-sm text-slate-600 mb-1">Mật khẩu</label>
             <input
@@ -217,6 +250,7 @@ function UserModal({
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
           </div>
+
           <div className="flex items-center gap-2 mt-2">
             <input
               type="checkbox"

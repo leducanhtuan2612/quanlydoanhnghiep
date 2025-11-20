@@ -47,7 +47,7 @@ export default function Roles() {
         }
         return r.json();
       })
-      .then(setUsers)
+      .then((data) => Array.isArray(data) && setUsers(data))
       .catch(() => setError("Không thể kết nối đến máy chủ."))
       .finally(() => setLoading(false));
   }, [navigate]);
@@ -55,10 +55,16 @@ export default function Roles() {
   // 🟡 Cập nhật quyền người dùng
   const updateRole = async (id: number, role: string) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${API}/admins/${id}/role?role=${role}`, {
+
+    const res = await fetch(`${API}/admins/${id}/role`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ role }),
     });
+
     if (res.ok) {
       setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)));
     } else if (res.status === 403) {
@@ -71,12 +77,22 @@ export default function Roles() {
   // 🔵 Khóa / Mở tài khoản
   const toggleActive = async (id: number, is_active: boolean) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`${API}/admins/${id}/active?is_active=${is_active}`, {
+
+    const res = await fetch(`${API}/admins/${id}/active`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ is_active }),
     });
+
     if (res.ok) {
-      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, is_active } : u)));
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, is_active } : u
+        )
+      );
     } else if (res.status === 403) {
       alert("Bạn không có quyền cập nhật trạng thái người dùng này.");
     } else {
@@ -105,12 +121,15 @@ export default function Roles() {
               <th className="text-right px-4 py-2">Thao tác</th>
             </tr>
           </thead>
+
           <tbody>
             {users.map((u) => (
               <tr key={u.id} className="border-t">
                 <td className="px-4 py-2">{u.username}</td>
                 <td className="px-4 py-2">{u.full_name || "-"}</td>
                 <td className="px-4 py-2">{u.email || "-"}</td>
+
+                {/* ROLE */}
                 <td className="px-4 py-2">
                   <select
                     value={u.role}
@@ -122,6 +141,8 @@ export default function Roles() {
                     <option value="admin">Quản trị</option>
                   </select>
                 </td>
+
+                {/* ACTIVE */}
                 <td className="px-4 py-2">
                   {u.is_active ? (
                     <span className="text-green-600 font-medium">Hoạt động</span>
@@ -129,6 +150,8 @@ export default function Roles() {
                     <span className="text-red-600 font-medium">Khóa</span>
                   )}
                 </td>
+
+                {/* ACTION */}
                 <td className="px-4 py-2 text-right space-x-2">
                   {u.is_active ? (
                     <button
@@ -148,9 +171,13 @@ export default function Roles() {
                 </td>
               </tr>
             ))}
+
             {users.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-slate-500 py-4 italic">
+                <td
+                  colSpan={6}
+                  className="text-center text-slate-500 py-4 italic"
+                >
                   Chưa có người dùng nào
                 </td>
               </tr>

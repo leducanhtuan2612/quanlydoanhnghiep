@@ -38,25 +38,23 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="w-64 text-white flex flex-col h-screen shadow-lg transition-all"
+      className="w-66 text-white flex flex-col h-screen shadow-lg transition-all"
       style={{
         background: settings?.theme_color || "var(--theme-color)",
       }}
     >
       {/* ==== Header sidebar ==== */}
-      <div className="px-5 h-14 flex items-center gap-2 text-lg font-semibold border-b border-white/10">
+      <div className="px-5 h-27 flex items-center gap-2 text-lg font-semibold">
         {settings?.logo_url ? (
           <img
-            src={`http://127.0.0.1:8000${settings.logo_url}`}
-            alt="Logo"
-            className="w-8 h-8 rounded-full bg-white p-[2px] object-cover"
+            
           />
         ) : (
           <div className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full text-xs font-bold">
             {settings?.company_name?.[0]?.toUpperCase() || "L"}
           </div>
         )}
-        <span className="truncate">{settings?.company_name || "Quản lý Doanh nghiệp"}</span>
+     
       </div>
 
       {/* ==== Menu ==== */}
@@ -85,9 +83,7 @@ export default function Sidebar() {
       </nav>
 
       {/* ==== Footer nhỏ ==== */}
-      <div className="p-3 text-xs text-white/60 border-t border-white/10">
-        © {new Date().getFullYear()} {settings?.company_name || "Công ty"}
-      </div>
+     
     </aside>
   );
 }

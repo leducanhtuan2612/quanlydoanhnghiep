@@ -72,13 +72,8 @@ export default function Dashboard() {
     summary?.by_region?.map((item) => ({ name: item.region, value: item.total })) || [];
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
-        <span className="text-sm text-gray-500">
-          {settings?.company_name || "Công ty TNHH ABC"}
-        </span>
-      </div>
+    <div className="p-0 space-y-1 bg-gray-50 min-h-screen">
+      
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
