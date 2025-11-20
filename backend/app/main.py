@@ -16,7 +16,9 @@ from app.routers import (
     ai_chat,
     crm,
     attendance  ,  
-    benefits,   # ⭐ THÊM DÒNG NÀY
+    benefits, 
+    salary,  
+    contracts,
 )
 
 
@@ -57,9 +59,12 @@ app.include_router(ai_chat.router)
 app.include_router(crm.router)
 app.include_router(attendance.router)   # ⭐ THÊM DÒNG NÀY
 app.include_router(benefits.router) 
+app.include_router(salary.router)
+app.include_router(contracts.router)
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/")
 def root():

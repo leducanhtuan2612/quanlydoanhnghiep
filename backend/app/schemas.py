@@ -22,6 +22,8 @@ class EmployeeBase(BaseModel):
     position: Optional[str] = None
     start_date: Optional[date] = None
     notes: Optional[str] = None
+salary_base: Optional[int] = 0
+salary_daily: Optional[int] = 0
 
 
 class EmployeeCreate(EmployeeBase):
@@ -48,6 +50,8 @@ class EmployeePatch(BaseModel):
 
     class Config:
         from_attributes = True
+salary_base: Optional[int] = None
+salary_daily: Optional[int] = None
 
 
 # ==========================================================
@@ -374,6 +378,60 @@ class BenefitRegistrationOut(BaseModel):
     employee_id: int
     registered_at: datetime
     status: str
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================================
+# 📜 HỢP ĐỒNG LAO ĐỘNG
+# ==========================================================
+class ContractBase(BaseModel):
+    employee_id: int
+    contract_type: str
+    start_date: date
+    end_date: date
+    note: str | None = None
+
+
+class ContractCreate(ContractBase):
+    """
+    Dùng để tạo hợp đồng mới.
+    Không cần truyền basic_salary vì cố định 7tr.
+    """
+    pass
+
+
+class ContractResponse(ContractBase):
+    id: int
+    status: str
+    basic_salary: float  # vẫn trả về lương để hiển thị
+
+    class Config:
+        from_attributes = True
+# ==========================================================
+# 📜 HỢP ĐỒNG LAO ĐỘNG
+# ==========================================================
+class ContractBase(BaseModel):
+    employee_id: int
+    contract_type: str
+    start_date: date
+    end_date: date
+    note: str | None = None
+
+
+class ContractCreate(ContractBase):
+    """
+    Dùng để tạo hợp đồng mới.
+    Không cần truyền basic_salary vì cố định 7tr.
+    """
+    pass
+
+
+class ContractResponse(ContractBase):
+    id: int
+    status: str
+    basic_salary: float  # vẫn trả về lương để hiển thị
 
     class Config:
         from_attributes = True

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, XCircle } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 
 const API_URL = "http://127.0.0.1:8000/benefits";
 const EMP_API = "http://127.0.0.1:8000/employees";
@@ -61,11 +61,17 @@ export default function EmployeeBenefits() {
         <h2 className="text-lg font-semibold text-slate-700 mb-4">Nhân viên</h2>
 
         <div className="space-y-2 text-slate-700 text-sm font-medium">
-          <MenuItem label="Hồ sơ" onClick={() => navigate(`/employees/${id}`)} />
+          <MenuItem label="Hồ sơ" onClick={() => navigate(`/employees/profile/${id}`)} />
           <MenuItem label="Chấm công" onClick={() => navigate(`/attendance/${id}`)} />
-          <MenuItem label="Tiền lương" />
+
+          {/* FIX HERE: điều hướng đúng sang trang lương */}
+          <MenuItem 
+            label="Tiền lương" 
+            onClick={() => navigate(`/employees/salary/${id}`)} 
+          />
+
           <MenuItem label="Phúc lợi" active />
-          <MenuItem label="Đồng phục" />
+            <MenuItem label="Hợp đồng" onClick={() => navigate(`/employees/${id}/contracts`)} />
         </div>
       </aside>
 
@@ -83,7 +89,7 @@ export default function EmployeeBenefits() {
           </button>
         </div>
 
-        {/* Banner + Avatar */}
+        {/* Banner */}
         <div className="relative w-full mx-6">
           <div className="w-full h-52 rounded-xl overflow-hidden">
             <img
@@ -106,6 +112,18 @@ export default function EmployeeBenefits() {
           <p className="text-slate-500">Chương trình phúc lợi</p>
         </div>
 
+        {/* Add Benefit (Admin Only) */}
+        <div className="mt-6 px-6 flex justify-end">
+          {localStorage.getItem("role") === "admin" && (
+            <button
+              onClick={() => navigate(`/admin/benefits/${id}`)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              + Thêm phúc lợi
+            </button>
+          )}
+        </div>
+
         {/* Benefit List */}
         <div className="px-6 py-10">
           <div className="bg-white border rounded-xl p-8 shadow-sm">
@@ -115,17 +133,17 @@ export default function EmployeeBenefits() {
             {loading ? (
               <div className="text-center py-6 text-slate-500">Đang tải...</div>
             ) : benefits.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">Không có chương trình nào</div>
+              <div className="text-center py-6 text-slate-500">
+                Không có chương trình nào
+              </div>
             ) : (
               <div className="space-y-6">
                 {benefits.map((b) => (
                   <div key={b.id} className="border rounded-lg p-4 shadow-sm bg-slate-50">
 
-                    {/* title */}
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-slate-800 text-lg">{b.title}</h4>
 
-                      {/* đăng ký / huỷ */}
                       {b.status === "open" ? (
                         !b.is_registered ? (
                           <button
@@ -147,10 +165,10 @@ export default function EmployeeBenefits() {
                       )}
                     </div>
 
-                    {/* description */}
-                    <p className="text-slate-700 mt-2 whitespace-pre-line">{b.description}</p>
+                    <p className="text-slate-700 mt-2 whitespace-pre-line">
+                      {b.description}
+                    </p>
 
-                    {/* info */}
                     <div className="flex gap-6 mt-3 text-sm text-slate-600">
                       <div>
                         <strong>Bắt đầu:</strong>{" "}
@@ -169,7 +187,6 @@ export default function EmployeeBenefits() {
                       </div>
                     </div>
 
-                    {/* Badge nếu đã đăng ký */}
                     {b.is_registered && (
                       <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
                         <Check size={16} /> Đã đăng ký
@@ -188,8 +205,7 @@ export default function EmployeeBenefits() {
   );
 }
 
-/* MENU ITEM */
-function MenuItem({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
+function MenuItem({ label, active, onClick }: any) {
   return (
     <div
       onClick={onClick}

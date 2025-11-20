@@ -7,6 +7,7 @@ const API_URL = "http://127.0.0.1:8000/employees";
 export default function EmployeeProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [emp, setEmp] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,10 +20,10 @@ export default function EmployeeProfile() {
       const res = await fetch(`${API_URL}/${id}`);
       const data = await res.json();
       setEmp(data);
-      setLoading(false);
-    } catch {
-      setLoading(false);
+    } catch (err) {
+      console.error("Error:", err);
     }
+    setLoading(false);
   };
 
   const uploadAvatar = async (file: File) => {
@@ -56,16 +57,17 @@ export default function EmployeeProfile() {
         <div className="space-y-2 text-slate-700 text-sm font-medium">
           <MenuItem label="Hồ sơ" active />
           <MenuItem label="Chấm công" onClick={() => navigate(`/attendance/${id}`)} />
-          <MenuItem label="Tiền lương" />
-          <MenuItem label="Phúc lợi" onClick={() => navigate(`/benefits/${id}`)} />
-          <MenuItem label="Đồng phục" />
+          <MenuItem label="Tiền lương" onClick={() => navigate(`/employees/salary/${id}`)} />
+          <MenuItem label="Phúc lợi" onClick={() => navigate(`/employees/${id}/benefits`)} />
+          <MenuItem label="Hợp đồng" onClick={() => navigate(`/employees/${id}/contracts`)} />
+
         </div>
       </aside>
 
-      {/* MAIN */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 bg-slate-50 min-h-screen overflow-auto">
 
-        {/* Back button */}
+        {/* Back */}
         <div className="p-6">
           <button
             onClick={() => navigate("/employees")}
@@ -76,11 +78,9 @@ export default function EmployeeProfile() {
           </button>
         </div>
 
-        {/* BANNER + AVATAR */}
-        <div className="relative w-full mx-6">
-
-          {/* Banner */}
-          <div className="w-full h-60 rounded-xl overflow-hidden">
+        {/* BANNER */}
+        <div className="relative w-full px-6">
+          <div className="w-full h-56 rounded-xl overflow-hidden shadow-sm">
             <img
               src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200"
               className="w-full h-full object-cover"
@@ -88,15 +88,15 @@ export default function EmployeeProfile() {
           </div>
 
           {/* Avatar */}
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-28 z-[200]">
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-20 z-[100]">
             <div className="relative">
               <img
                 src={avatarUrl}
-                className="w-64 h-64 rounded-full border-[8px] border-white shadow-2xl object-cover"
+                className="w-40 h-40 rounded-full border-[6px] border-white shadow-xl object-cover"
               />
 
-              <label className="absolute bottom-3 right-3 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full cursor-pointer shadow-lg">
-                <Pencil size={20} />
+              <label className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-md">
+                <Pencil size={18} />
                 <input
                   type="file"
                   hidden
@@ -111,36 +111,27 @@ export default function EmployeeProfile() {
         </div>
 
         {/* NAME */}
-        <div className="mt-36 text-center space-y-1">
-          <h1 className="text-3xl font-bold text-slate-800">{emp.name}</h1>
-
-          <div className="flex justify-center mt-4">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700">
-              <Pencil size={16} />
-              Cập nhật thông tin
-            </button>
-          </div>
+        <div className="mt-28 text-center space-y-1">
+          <h1 className="text-2xl font-bold text-slate-800">{emp.name}</h1>
+          <p className="text-slate-500 text-sm">
+            {emp.position} • {emp.department}
+          </p>
         </div>
 
-        {/* INFO */}
+        {/* INFO CARD */}
         <div className="px-6 py-14">
-          <div className="bg-white border rounded-xl p-8 shadow-sm">
-
-            <h3 className="font-semibold text-lg mb-6">Thông tin cơ bản</h3>
+          <div className="bg-white border rounded-xl p-8 shadow-sm max-w-4xl mx-auto">
+            <h3 className="font-semibold text-xl text-slate-800 mb-6">Thông tin cá nhân</h3>
 
             <div className="grid grid-cols-2 gap-6 text-[15px] text-slate-700">
               <Info label="Tên" value={emp.name} />
               <Info label="Giới tính" value={emp.gender} />
-
               <Info label="Ngày sinh" value={emp.birthday} />
               <Info label="Điện thoại" value={emp.phone} />
-
               <Info label="Email" value={emp.email} />
               <Info label="Chức vụ" value={emp.position} />
-
               <Info label="Phòng ban" value={emp.department} />
               <Info label="Địa chỉ" value={emp.address} />
-
               <Info label="CCCD/CMND" value={emp.citizen_id} />
               <Info label="Ghi chú" value={emp.notes || "—"} />
             </div>
@@ -152,31 +143,20 @@ export default function EmployeeProfile() {
   );
 }
 
-/* MENU ITEM */
-function MenuItem({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
+/* SIDEBAR ITEM */
+function MenuItem({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
   return (
     <div
       onClick={onClick}
-      className={`px-3 py-2 rounded-lg cursor-pointer transition ${
-        active
-          ? "bg-blue-600 text-white shadow"
-          : "hover:bg-slate-100 text-slate-700"
-      }`}
+      className={`px-3 py-2 rounded-lg cursor-pointer transition 
+        ${active ? "bg-blue-600 text-white shadow" : "hover:bg-slate-100 text-slate-700"}`}
     >
       {label}
     </div>
   );
 }
 
-/* INFO ITEM */
+/* INFO ROW */
 function Info({ label, value }: { label: string; value: any }) {
   return (
     <div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Calendar, Clock, FileDown, Pencil, Trash } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Calendar, FileDown, Pencil, Trash, ArrowLeft } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
 
 const API_URL = "http://127.0.0.1:8000/attendance";
 
@@ -16,6 +16,7 @@ type Attendance = {
 export default function AttendancePage() {
   const { id } = useParams();
   const employeeId = Number(id);
+  const navigate = useNavigate();
 
   const role = localStorage.getItem("role");
 
@@ -156,6 +157,18 @@ export default function AttendancePage() {
 
   return (
     <div className="space-y-8 p-6">
+
+      {/* NÚT QUAY LẠI HỒ SƠ */}
+    <div>
+  <button
+    onClick={() => navigate(`/employees/profile/${employeeId}`)}
+    className="inline-flex items-center gap-2 text-slate-600 hover:text-black"
+  >
+    <ArrowLeft size={18} />
+    Quay lại hồ sơ
+  </button>
+</div>
+
       <h1 className="text-xl font-semibold">Chấm công</h1>
 
       {/* ----------- NGÀY ----------- */}
@@ -185,7 +198,7 @@ export default function AttendancePage() {
           </button>
         </div>
 
-        {/* Table */}
+        {/* Table ngày */}
         <div className="bg-white border rounded-xl overflow-x-auto">
           {loading ? (
             <div className="p-6 text-center text-slate-500">Đang tải…</div>
@@ -197,7 +210,9 @@ export default function AttendancePage() {
                   <th className="px-4 py-2">Giờ vào</th>
                   <th className="px-4 py-2">Giờ ra</th>
                   <th className="px-4 py-2">Trạng thái</th>
-                  {role === "admin" && <th className="px-4 py-2">Hành động</th>}
+                  {role === "admin" && (
+                    <th className="px-4 py-2">Hành động</th>
+                  )}
                 </tr>
               </thead>
 
@@ -273,7 +288,9 @@ export default function AttendancePage() {
                   <th className="px-4 py-2">Giờ vào</th>
                   <th className="px-4 py-2">Giờ ra</th>
                   <th className="px-4 py-2">Trạng thái</th>
-                  {role === "admin" && <th className="px-4 py-2">Hành động</th>}
+                  {role === "admin" && (
+                    <th className="px-4 py-2">Hành động</th>
+                  )}
                 </tr>
               </thead>
 

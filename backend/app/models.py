@@ -1,5 +1,3 @@
-# app/models.py
-
 from sqlalchemy import (
     Column,
     Integer,
@@ -41,6 +39,9 @@ class Employee(Base):
     address = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
 
+    salary_base = Column(Integer, default=0)
+    salary_daily = Column(Integer, default=0)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -54,6 +55,13 @@ class Employee(Base):
     # 🔗 1 - N: Employee → BenefitRegistration
     benefit_registrations = relationship(
         "BenefitRegistration",
+        back_populates="employee",
+        cascade="all, delete-orphan",
+    )
+
+    # 🔗 1 - N: Employee → Contracts  ⭐ QUAN TRỌNG
+    contracts = relationship(
+        "Contract",
         back_populates="employee",
         cascade="all, delete-orphan",
     )
@@ -256,7 +264,6 @@ class Attendance(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # 1 - N: Attendance → Employee
     employee = relationship("Employee", back_populates="attendances")
 
 
@@ -274,8 +281,6 @@ class BenefitProgram(Base):
     registration_end = Column(Date, nullable=True)
 
     location = Column(String(255), nullable=True)
-
-    # open / closed
     status = Column(String(20), default="open")
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -292,19 +297,29 @@ class BenefitRegistration(Base):
     __tablename__ = "benefit_registrations"
 
     id = Column(Integer, primary_key=True, index=True)
-    benefit_id = Column(
-        Integer,
-        ForeignKey("benefit_programs.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    employee_id = Column(
-        Integer,
-        ForeignKey("employees.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    benefit_id = Column(Integer, ForeignKey("benefit_programs.id", ondelete="CASCADE"))
+    employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"))
 
     registered_at = Column(DateTime, default=datetime.utcnow)
-    status = Column(String(20), default="registered")  # registered / cancelled
+    status = Column(String(20), default="registered")
 
     benefit = relationship("BenefitProgram", back_populates="registrations")
     employee = relationship("Employee", back_populates="benefit_registrations")
+
+
+# =====================================================
+# 📜 HỢP ĐỒNG LAO ĐỘNG
+# =====================================================
+class Contract(Base):
+    __tablename__ = "contracts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"))
+    contract_type = Column(String)
+    start_date = Column(Date)
+    end_date = Column(Date)
+    basic_salary = Column(Float)
+    status = Column(String, default="active")  # active / ended
+    note = Column(Text, nullable=True)
+
+    employee = relationship("Employee", back_populates="contracts")

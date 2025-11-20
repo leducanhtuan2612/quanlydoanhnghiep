@@ -46,6 +46,7 @@ type CustomerDetailCRM = {
 // =======================
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [search, setSearch] = useState(""); // <-- thêm tìm kiếm
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [openModal, setOpenModal] = useState(false);
@@ -61,10 +62,18 @@ export default function Customers() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Filter tìm kiếm
+  const filteredCustomers = customers.filter((c) => {
+    const kw = search.toLowerCase().trim();
+    return (
+      c.name.toLowerCase().includes(kw) ||
+      (c.phone ?? "").toLowerCase().includes(kw)
+    );
+  });
+
   // Mở popup CRM
   const openCRMDetail = async (id: number) => {
     try {
-      // ✅ Dùng đúng endpoint CRM
       const res = await fetch(`${API}/crm/customers/${id}/detail`);
       if (!res.ok) {
         alert("Không tải được dữ liệu CRM");
@@ -116,7 +125,16 @@ export default function Customers() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold">Quản lý Khách hàng</h1>
 
-      <div className="flex justify-end">
+      {/* Thanh tìm kiếm */}
+      <div className="flex justify-between items-center">
+        <input
+          type="text"
+          placeholder="🔍 Tìm theo tên hoặc SĐT..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 border rounded-lg w-80"
+        />
+
         <button
           onClick={() => {
             setEditing(null);
@@ -141,7 +159,7 @@ export default function Customers() {
           </thead>
 
           <tbody>
-            {customers.map((c) => (
+            {filteredCustomers.map((c) => (
               <tr key={c.id} className="border-t">
                 <td className="px-4 py-2">{c.name}</td>
                 <td className="px-4 py-2">{c.email}</td>
@@ -175,10 +193,10 @@ export default function Customers() {
               </tr>
             ))}
 
-            {customers.length === 0 && (
+            {filteredCustomers.length === 0 && (
               <tr>
                 <td colSpan={5} className="py-4 text-center text-slate-400 italic">
-                  Không có khách hàng nào
+                  Không tìm thấy khách hàng phù hợp
                 </td>
               </tr>
             )}
@@ -278,7 +296,7 @@ function CustomerFormModal({
 }
 
 // ===================================================================
-// CRM MODAL — CHUẨN & FULL CHỨC NĂNG
+// CRM MODAL — FULL & NGUYÊN BẢN
 // ===================================================================
 function CRMModal({
   data,
@@ -292,7 +310,9 @@ function CRMModal({
   const [noteContent, setNoteContent] = useState("");
 
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
+    null
+  );
   const [sendingEmail, setSendingEmail] = useState(false);
 
   // Tải danh sách mẫu email
@@ -341,11 +361,15 @@ function CRMModal({
     if (!confirm("Bạn có chắc muốn xóa ghi chú này?")) return;
 
     try {
-      const res = await fetch(`${API}/crm/notes/${noteId}`, { method: "DELETE" });
+      const res = await fetch(`${API}/crm/notes/${noteId}`, {
+        method: "DELETE",
+      });
+
       if (!res.ok) {
         alert("Không thể xóa ghi chú");
         return;
       }
+
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch {
       alert("Lỗi khi xóa ghi chú");
@@ -368,19 +392,19 @@ function CRMModal({
       });
 
       if (!res.ok) {
-        alert("Gửi email thất bại, kiểm tra lại backend / SMTP.");
+        alert("Gửi email thất bại, kiểm tra backend hoặc SMTP.");
         return;
       }
 
-      alert("Đã gửi email (hoặc đưa vào hàng đợi).");
+      alert("Đã gửi email.");
     } catch {
-      alert("Gửi email thất bại, kiểm tra lại backend / mạng.");
+      alert("Không thể gửi email.");
     } finally {
       setSendingEmail(false);
     }
   };
 
-  // Format trạng thái đơn
+  // Format trạng thái đơn hàng
   const formatStatus = (s: string) => {
     switch (s) {
       case "completed":
@@ -444,7 +468,9 @@ function CRMModal({
         {/* DANH SÁCH GHI CHÚ */}
         <h3 className="text-lg font-semibold mb-2">Ghi chú khách hàng</h3>
         <div className="border rounded-lg p-4 mb-6 max-h-64 overflow-y-auto">
-          {notes.length === 0 && <p className="text-slate-500">Chưa có ghi chú.</p>}
+          {notes.length === 0 && (
+            <p className="text-slate-500">Chưa có ghi chú.</p>
+          )}
 
           {notes.map((n) => (
             <div key={n.id} className="border-b pb-2 mb-2 last:border-b-0">
