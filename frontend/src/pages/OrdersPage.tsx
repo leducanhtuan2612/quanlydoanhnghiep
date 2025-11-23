@@ -18,7 +18,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // 🧭 Hàm tải lại danh sách đơn hàng
+  // 🧭 Hàm tải danh sách đơn hàng
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -37,17 +37,16 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  // 🌀 Hàm thay đổi trạng thái đơn hàng
+  // 🌀 Đổi trạng thái đơn hàng — ĐÃ SỬA JSON BODY
   const handleChangeStatus = async (orderId: number, newStatus: string) => {
     try {
-      await fetch(
-        `http://127.0.0.1:8000/orders/${orderId}/status?status=${encodeURIComponent(newStatus)}`,
-        { method: "PUT" }
-      );
+      await fetch(`http://127.0.0.1:8000/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }), // ⭐ Cực kỳ quan trọng!
+      });
 
-      // ✅ Sau khi đổi trạng thái → tải lại đơn hàng & sản phẩm
       await fetchOrders();
-      await fetch("http://127.0.0.1:8000/products"); // frontend sản phẩm cũng tự reload nếu bạn có state chung
     } catch (err) {
       alert("❌ Lỗi khi cập nhật trạng thái đơn hàng");
     }
@@ -55,7 +54,7 @@ export default function OrdersPage() {
 
   return (
     <div className="p-6">
-      {/* ====== Header ====== */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">📦 Danh sách đơn hàng</h2>
         <Link
@@ -66,11 +65,9 @@ export default function OrdersPage() {
         </Link>
       </div>
 
-      {/* ====== Loading / Error ====== */}
       {loading && <p>⏳ Đang tải dữ liệu...</p>}
       {error && <p className="text-red-600">⚠️ {error}</p>}
 
-      {/* ====== Table ====== */}
       {!loading && !error && (
         <div className="overflow-x-auto bg-white border rounded-xl shadow">
           <table className="min-w-full text-sm">
@@ -98,6 +95,8 @@ export default function OrdersPage() {
                     <td className="p-3">{o.date}</td>
                     <td className="p-3">{o.category}</td>
                     <td className="p-3">{o.region}</td>
+
+                    {/* Trạng thái */}
                     <td className="p-3">
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -113,11 +112,14 @@ export default function OrdersPage() {
                         {o.status}
                       </span>
                     </td>
+
+                    {/* Số tiền */}
                     <td className="p-3 text-right">
                       ₫{o.amount.toLocaleString("vi-VN")}
                     </td>
+
+                    {/* Hành động */}
                     <td className="p-3 text-center">
-                      {/* Nút đổi trạng thái */}
                       <select
                         value={o.status}
                         onChange={(e) =>

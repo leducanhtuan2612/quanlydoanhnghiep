@@ -19,6 +19,7 @@ from app.routers import (
     benefits, 
     salary,  
     contracts,
+    notifications,
 )
 
 
@@ -61,6 +62,7 @@ app.include_router(attendance.router)   # ⭐ THÊM DÒNG NÀY
 app.include_router(benefits.router) 
 app.include_router(salary.router)
 app.include_router(contracts.router)
+app.include_router(notifications.router)
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -75,19 +75,25 @@ def get_revenue_report(db: Session = Depends(database.get_db)):
 
     by_month_data = [{"month": int(m[0]), "total": float(m[1] or 0)} for m in by_month]
 
+# DOANH THU THEO DANH MỤC (ĐÃ SỬA)
     by_category = (
-        completed_orders.join(models.Product, models.Order.product_id == models.Product.id)
+        completed_orders.join(models.Product)
         .with_entities(
-            models.Product.category,
+            func.lower(models.Product.category).label("cat_norm"),
             func.sum(models.Order.amount).label("total"),
         )
-        .group_by(models.Product.category)
+        .group_by(func.lower(models.Product.category))
         .all()
     )
 
     by_category_data = [
-        {"category": (c or "Khác"), "total": float(total or 0)} for c, total in by_category
+        {
+            "category": (cat or "khác").title(),
+            "total": float(total or 0)
+        }
+        for cat, total in by_category
     ]
+
 
     by_region = (
         completed_orders.with_entities(

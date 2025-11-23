@@ -116,7 +116,7 @@ export default function EmployeeContract() {
       {/* MAIN CONTENT */}
       <div className="flex-1 bg-slate-50 min-h-screen overflow-auto">
         {/* Back button */}
-        <div className="p-6">
+        <div className="p-4">
           <button
             onClick={() => navigate("/employees")}
             className="inline-flex items-center gap-2 text-slate-600 hover:text-black"
@@ -144,10 +144,10 @@ export default function EmployeeContract() {
         </div>
 
         {/* Name */}
-        <div className="mt-24 text-center space-y-1">
-          <h1 className="text-2xl font-bold text-slate-800">{employee.name}</h1>
-          <p className="text-slate-500">Hợp đồng lao động</p>
-        </div>
+    <div className="mt-24 text-center space-y-1 translate-x-6">
+  <h1 className="text-2xl font-bold text-slate-800">{employee.name}</h1>
+  <p className="text-slate-500">Hợp đồng lao động</p>
+</div>
 
         {/* Create contract button (admin) */}
         <div className="mt-6 px-6 flex justify-end">
@@ -249,8 +249,9 @@ export default function EmployeeContract() {
         )}
 
         {/* DANH SÁCH HỢP ĐỒNG */}
-        <div className="px-6 py-10">
-          <div className="bg-white border rounded-xl p-8 shadow-sm">
+        <div className="px-6 py-10 ml-6">
+  <div className="bg-white border rounded-xl p-8 shadow-sm">
+
             <h3 className="font-semibold text-lg mb-6">Danh sách hợp đồng</h3>
 
             {loading ? (

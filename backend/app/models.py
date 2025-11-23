@@ -323,3 +323,13 @@ class Contract(Base):
     note = Column(Text, nullable=True)
 
     employee = relationship("Employee", back_populates="contracts")
+# =====================================================
+# Thông báo
+# =====================================================
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    time = Column(String, default="Vừa xong")
+    created_at = Column(DateTime, default=datetime.utcnow)

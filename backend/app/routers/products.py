@@ -6,6 +6,8 @@ from datetime import date
 from .. import models, schemas, database
 import os, shutil
 
+from app.utils.notify import push_notify   # ⭐ THÊM DÒNG NÀY
+
 router = APIRouter(prefix="/products", tags=["Products"])
 get_db = database.get_db
 
@@ -60,6 +62,9 @@ def create_product(
     db.add(inv)
     db.commit()
 
+    # ⭐ THÊM THÔNG BÁO
+    push_notify(db, f"Sản phẩm mới '{new_item.name}' đã được tạo")
+
     return new_item
 
 
@@ -106,6 +111,10 @@ def update_product(
 
     db.commit()
     db.refresh(obj)
+
+    # ⭐ THÔNG BÁO CẬP NHẬT
+    push_notify(db, f"Sản phẩm '{obj.name}' đã được cập nhật")
+
     return obj
 
 
@@ -116,8 +125,14 @@ def delete_product(id: int, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    db.query(models.Inventory).filter(models.Inventory.product_id == id).delete()
+    name = obj.name
 
+    # Xóa liên quan kho
+    db.query(models.Inventory).filter(models.Inventory.product_id == id).delete()
     db.delete(obj)
     db.commit()
+
+    # ⭐ THÊM THÔNG BÁO
+    push_notify(db, f"Sản phẩm '{name}' đã bị xóa khỏi hệ thống")
+
     return {"message": "✅ Đã xóa sản phẩm và kho hàng liên quan"}

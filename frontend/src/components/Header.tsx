@@ -1,4 +1,4 @@
-import { MessageCircle, UserCircle, LogOut, SendHorizonal } from "lucide-react";
+import { MessageCircle, UserCircle, LogOut, SendHorizonal, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useSettings } from "../context/SettingsContext";
@@ -6,12 +6,29 @@ import { useSettings } from "../context/SettingsContext";
 export default function Header() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // --- Chatbot ---
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const { settings } = useSettings();
   const chatRef = useRef<HTMLDivElement>(null);
+
+  // --- Notifications (API) ---
+  const [showNotify, setShowNotify] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/notifications");
+      const data = await res.json();
+      setNotifications(data);
+    } catch (err) {
+      console.log("Lỗi tải thông báo:", err);
+    }
+  };
+
+  const { settings } = useSettings();
 
   const username = localStorage.getItem("username") || "Người dùng";
   const role = localStorage.getItem("role") || "user";
@@ -28,7 +45,7 @@ export default function Header() {
     }
   }, [messages]);
 
-  // Gửi tin nhắn
+  // Gửi tin nhắn Chatbot
   const sendMessage = async () => {
     if (!input.trim()) return;
     setLoading(true);
@@ -42,16 +59,14 @@ export default function Header() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: input }),
       });
+
       const data = await res.json();
       const aiMessage = { sender: "Tuấn AI", text: data.reply };
       setMessages((prev) => [...prev, aiMessage]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          sender: "Tuấn AI",
-          text: "⚠️ Không thể kết nối đến máy chủ. Vui lòng thử lại sau.",
-        },
+        { sender: "Tuấn AI", text: "⚠️ Không thể kết nối đến máy chủ." },
       ]);
     }
 
@@ -62,9 +77,7 @@ export default function Header() {
   return (
     <header
       className="h-18 flex items-center justify-between text-white px-5 shadow relative"
-      style={{
-        background: settings?.theme_color || "var(--theme-color)",
-      }}
+      style={{ background: settings?.theme_color || "var(--theme-color)" }}
     >
       {/* Logo */}
       <div className="flex items-center gap-2">
@@ -72,8 +85,7 @@ export default function Header() {
           <img
             src={`http://127.0.0.1:8000${settings.logo_url}`}
             alt="Logo"
-           className="w-12 h-12 rounded-full bg-white p-1 object-cover shadow"
-
+            className="w-12 h-12 rounded-full bg-white p-1 object-cover shadow"
           />
         ) : (
           <div className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full text-xs">
@@ -85,27 +97,49 @@ export default function Header() {
         </div>
       </div>
 
-      {/* User + Chat */}
+      {/* Right Icons */}
       <div className="flex items-center gap-4 relative">
-        {/* Chat icon */}
+
+        {/* ----- NOTIFICATION ICON ----- */}
+        <span title="Thông báo" className="relative">
+          <Bell
+            className="opacity-90 cursor-pointer hover:opacity-100 transition"
+            size={22}
+            onClick={() => {
+              setShowNotify(!showNotify);
+              setShowChat(false);
+              fetchNotifications(); // ⭐ Load API khi mở panel
+            }}
+          />
+
+          {/* Badge số lượng */}
+          {notifications.length > 0 && (
+            <span className="absolute -top-2 -right-1 bg-red-500 text-white text-xs px-1.5 py-[1px] rounded-full shadow">
+              {notifications.length}
+            </span>
+          )}
+        </span>
+
+        {/* ----- CHAT ICON ----- */}
         <span title="Trợ lý Tuấn AI">
           <MessageCircle
             className="opacity-90 cursor-pointer hover:opacity-100 transition"
             size={22}
-            onClick={() => setShowChat(!showChat)}
+            onClick={() => {
+              setShowChat(!showChat);
+              setShowNotify(false);
+            }}
           />
         </span>
 
-        {/* User menu */}
+        {/* ----- USER MENU ----- */}
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="flex items-center gap-2 hover:opacity-100 transition"
           >
             <UserCircle size={28} className="opacity-90" />
-            <span className="text-sm hidden sm:inline">
-              {username} ({role})
-            </span>
+            <span className="text-sm hidden sm:inline">{username} ({role})</span>
           </button>
 
           {menuOpen && (
@@ -127,7 +161,56 @@ export default function Header() {
         </div>
       </div>
 
-      {/* CHAT POPUP */}
+      {/* ===================== NOTIFICATION PANEL ===================== */}
+      {showNotify && (
+        <div className="absolute top-14 right-24 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col animate-fadeIn z-50">
+
+          {/* Header */}
+          <div
+            className="px-4 py-3 font-semibold flex justify-between items-center text-white"
+            style={{ background: settings?.theme_color || "#2563EB" }}
+          >
+            <span>🔔 Thông báo</span>
+            <button
+              onClick={() => setShowNotify(false)}
+              className="text-white text-sm opacity-70 hover:opacity-100"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="p-3 overflow-y-auto bg-gray-50 h-72 space-y-2 scrollbar-thin">
+            {notifications.length === 0 ? (
+              <p className="text-gray-500 text-sm italic text-center mt-12">
+                Không có thông báo nào.
+              </p>
+            ) : (
+             notifications.map((n) => (
+  <div key={n.id} className="bg-white border rounded-lg p-3 shadow-sm">
+    <p className="font-medium text-sm text-gray-900">{n.title}</p>
+
+
+    {/* thời gian custom */}
+    <p className="text-xs text-gray-500 mt-1">
+      {n.time || "Vừa xong"}
+    </p>
+
+    {/* created_at chuẩn ISO → convert sang VN */}
+    {n.created_at && (
+      <p className="text-[10px] text-gray-400 mt-1">
+        {new Date(n.created_at).toLocaleString("vi-VN")}
+      </p>
+    )}
+  </div>
+))
+
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== CHATBOT POPUP ===================== */}
       {showChat && (
         <div className="absolute top-14 right-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col animate-fadeIn z-50">
 
@@ -145,15 +228,10 @@ export default function Header() {
             </button>
           </div>
 
-          {/* Chat body (GIỮ CỐ ĐỊNH – CUỘN BÊN TRONG) */}
+          {/* Chat body */}
           <div
             ref={chatRef}
-            className="p-3 overflow-y-auto bg-gray-50 h-72 space-y-3 
-            scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-            style={{
-              maxHeight: "300px",
-              minHeight: "300px",
-            }}
+            className="p-3 overflow-y-auto bg-gray-50 h-72 space-y-3 scrollbar-thin"
           >
             {messages.length === 0 && (
               <p className="text-gray-400 text-sm italic text-center mt-12">
@@ -164,7 +242,7 @@ export default function Header() {
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.sender === "Bạn" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`px-3 py-2 rounded-2xl text-sm max-w-[80%] leading-relaxed ${
+                  className={`px-3 py-2 rounded-2xl text-sm max-w-[80%] ${
                     m.sender === "Bạn"
                       ? "bg-blue-600 text-white rounded-br-none shadow"
                       : "bg-gray-200 text-gray-800 rounded-bl-none shadow"
@@ -176,7 +254,9 @@ export default function Header() {
             ))}
 
             {loading && (
-              <div className="text-gray-400 italic text-sm text-center">Tuấn AI đang suy nghĩ...</div>
+              <div className="text-gray-400 italic text-sm text-center">
+                Tuấn AI đang suy nghĩ...
+              </div>
             )}
           </div>
 
@@ -186,8 +266,7 @@ export default function Header() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-full outline-none text-sm text-slate-800 
-              placeholder:text-slate-400 focus:ring-1 focus:ring-blue-400 max-h-12"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-full outline-none text-sm text-slate-800 placeholder:text-slate-400"
               placeholder="💬 Nhập tin nhắn..."
             />
 

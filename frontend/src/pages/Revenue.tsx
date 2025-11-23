@@ -235,24 +235,27 @@ export default function Revenue() {
           Top sản phẩm bán chạy
         </h2>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-gray-50">
-              <th className="py-2">Sản phẩm</th>
-              <th>Số lượng</th>
-              <th>Doanh thu</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topProducts.map((p, index) => (
-              <tr key={index} className="border-b">
-                <td className="py-2">{p.product}</td>
-                <td>{p.total_sold}</td>
-                <td>₫{p.revenue.toLocaleString("vi-VN")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <table className="w-full text-sm">
+  <thead>
+    <tr className="border-b bg-gray-50">
+      <th className="py-2 px-4 text-left">Sản phẩm</th>
+      <th className="py-2 px-4 text-center">Số lượng</th>
+      <th className="py-2 px-4 text-right">Doanh thu</th>
+    </tr>
+  </thead>
+  <tbody>
+    {topProducts.map((p, index) => (
+      <tr key={index} className="border-b">
+        <td className="py-2 px-4 text-left">{p.product}</td>
+        <td className="py-2 px-4 text-center">{p.total_sold}</td>
+        <td className="py-2 px-4 text-right">
+          ₫{p.revenue.toLocaleString("vi-VN")}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
       </div>
 
       {/* ======================================================
@@ -264,24 +267,27 @@ export default function Revenue() {
           Top khách hàng mua nhiều nhất
         </h2>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-gray-50">
-              <th className="py-2">Khách hàng</th>
-              <th>Số đơn</th>
-              <th>Tổng chi tiêu</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topCustomers.map((c, index) => (
-              <tr key={index} className="border-b">
-                <td className="py-2">{c.customer}</td>
-                <td>{c.order_count}</td>
-                <td>₫{c.total_spent.toLocaleString("vi-VN")}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+       <table className="w-full text-sm">
+  <thead>
+    <tr className="border-b bg-gray-50">
+      <th className="py-2 px-4 text-left">Khách hàng</th>
+      <th className="py-2 px-4 text-center">Số đơn</th>
+      <th className="py-2 px-4 text-right">Tổng chi tiêu</th>
+    </tr>
+  </thead>
+  <tbody>
+    {topProducts.map((p, index) => (
+      <tr key={index} className="border-b">
+        <td className="py-2 px-4 text-left">{p.product}</td>
+        <td className="py-2 px-4 text-center">{p.total_sold}</td>
+        <td className="py-2 px-4 text-right">
+          ₫{p.revenue.toLocaleString("vi-VN")}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
       </div>
 
     </div>

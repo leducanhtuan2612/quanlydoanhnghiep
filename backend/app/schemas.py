@@ -435,3 +435,16 @@ class ContractResponse(ContractBase):
 
     class Config:
         from_attributes = True
+
+
+# ==========================================================
+#Thông báo
+# ==========================================================
+class NotificationOut(BaseModel):
+    id: int
+    title: str
+    time: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

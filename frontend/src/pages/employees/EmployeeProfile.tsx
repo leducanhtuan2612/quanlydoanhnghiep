@@ -26,23 +26,31 @@ export default function EmployeeProfile() {
     setLoading(false);
   };
 
+  // 🚀 FIX 100% — Upload + cập nhật state avatar ngay
   const uploadAvatar = async (file: File) => {
     const form = new FormData();
     form.append("file", file);
 
-    await fetch(`${API_URL}/upload-avatar/${id}`, {
+    const res = await fetch(`${API_URL}/upload-avatar/${id}`, {
       method: "POST",
       body: form,
     });
 
-    fetchEmployee();
+    const data = await res.json();
+
+    // ⚡ Cập nhật avatar trong state ngay lập tức
+    setEmp((prev: any) => ({
+      ...prev,
+      avatar: data.avatar,
+    }));
   };
 
   if (loading) return <div className="p-6">Đang tải...</div>;
   if (!emp) return <div className="p-6">Không tìm thấy nhân viên</div>;
 
+  // ⚡ FIX cache bằng timestamp
   const avatarUrl = emp.avatar
-    ? `http://127.0.0.1:8000${emp.avatar}`
+    ? `http://127.0.0.1:8000${emp.avatar}?t=${Date.now()}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(
         emp.name
       )}&size=260&background=f3f4f6&color=0f172a`;
@@ -60,7 +68,6 @@ export default function EmployeeProfile() {
           <MenuItem label="Tiền lương" onClick={() => navigate(`/employees/salary/${id}`)} />
           <MenuItem label="Phúc lợi" onClick={() => navigate(`/employees/${id}/benefits`)} />
           <MenuItem label="Hợp đồng" onClick={() => navigate(`/employees/${id}/contracts`)} />
-
         </div>
       </aside>
 
@@ -68,7 +75,7 @@ export default function EmployeeProfile() {
       <div className="flex-1 bg-slate-50 min-h-screen overflow-auto">
 
         {/* Back */}
-        <div className="p-6">
+        <div className="p-4">
           <button
             onClick={() => navigate("/employees")}
             className="inline-flex items-center gap-2 text-slate-600 hover:text-black"
@@ -80,7 +87,7 @@ export default function EmployeeProfile() {
 
         {/* BANNER */}
         <div className="relative w-full px-6">
-          <div className="w-full h-56 rounded-xl overflow-hidden shadow-sm">
+          <div className="w-full h-50 rounded-xl overflow-hidden shadow-sm">
             <img
               src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200"
               className="w-full h-full object-cover"
@@ -111,7 +118,7 @@ export default function EmployeeProfile() {
         </div>
 
         {/* NAME */}
-        <div className="mt-28 text-center space-y-1">
+        <div className="mt-20 text-center space-y-1">
           <h1 className="text-2xl font-bold text-slate-800">{emp.name}</h1>
           <p className="text-slate-500 text-sm">
             {emp.position} • {emp.department}
@@ -119,7 +126,7 @@ export default function EmployeeProfile() {
         </div>
 
         {/* INFO CARD */}
-        <div className="px-6 py-14">
+        <div className="px-6 py-8 ml-10">
           <div className="bg-white border rounded-xl p-8 shadow-sm max-w-4xl mx-auto">
             <h3 className="font-semibold text-xl text-slate-800 mb-6">Thông tin cá nhân</h3>
 
@@ -137,14 +144,13 @@ export default function EmployeeProfile() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
 /* SIDEBAR ITEM */
-function MenuItem({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
+function MenuItem({ label, active, onClick }: any) {
   return (
     <div
       onClick={onClick}
@@ -157,7 +163,7 @@ function MenuItem({ label, active, onClick }: { label: string; active?: boolean;
 }
 
 /* INFO ROW */
-function Info({ label, value }: { label: string; value: any }) {
+function Info({ label, value }: any) {
   return (
     <div>
       <p className="text-sm text-slate-500">{label}</p>
