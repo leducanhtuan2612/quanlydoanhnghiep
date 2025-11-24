@@ -42,11 +42,57 @@ export default function Employees() {
 
   const navigate = useNavigate();
 
+  // User login info
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+// ============================
+// ⭐ KIỂM TRA QUYỀN NHÂN VIÊN
+// ============================
+useEffect(() => {
+  if (user.role === "employee") {
+    // ❗ Chưa gắn employee_id → KHÔNG redirect
+    if (!user.employee_id) return;
+
+    // ✔ Có employee_id → điều hướng vào hồ sơ
+    navigate(`/employees/profile/${user.employee_id}`);
+  }
+}, [user, navigate]);
+
+/// Nếu là nhân viên
+if (user.role === "employee") {
+
+  // Chưa gắn employee_id → chỉ hiện thông báo
+  if (!user.employee_id) {
+    return (
+      <div className="p-6 text-center text-red-600 font-medium">
+        ❗ Tài khoản của bạn chưa được gắn vào hồ sơ nhân viên.
+        <br />Vui lòng liên hệ quản trị viên.
+      </div>
+    );
+  }
+
+  // Có employee_id → chuyển đến hồ sơ
+  navigate(`/employees/profile/${user.employee_id}`);
+  return (
+    <div className="p-6 text-center text-slate-600">
+      ⏳ Đang chuyển hướng đến hồ sơ của bạn...
+    </div>
+  );
+}
+
+
+
+
   // Fetch employees
   const fetchEmployees = async () => {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    setEmployees(data);
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      if (Array.isArray(data)) setEmployees(data);
+    } catch (err) {
+      console.error(err);
+      setEmployees([]);
+    }
   };
 
   useEffect(() => {
@@ -144,7 +190,7 @@ export default function Employees() {
 
         <select
           value={department}
-          onChange={(e) => setDepartment(e.target.value as any)}
+          onChange={(e) => setDepartment(e.target.value as Department)}
           className="py-2 px-3 border rounded-lg"
         >
           <option value="">Tất cả phòng ban</option>
@@ -185,7 +231,6 @@ export default function Employees() {
                   className="px-4 py-2 flex items-center gap-3 cursor-pointer"
                   onClick={() => navigate(`/employees/profile/${e.id}`)}
                 >
-                  {/* ❌ Không hiển thị avatar */}
                   <User className="w-10 h-10 p-2 bg-slate-100 rounded-full text-slate-500" />
 
                   <span className="font-medium text-blue-600 hover:underline">
@@ -208,25 +253,36 @@ export default function Employees() {
                     {e.active ? "Đang làm việc" : "Tạm nghỉ"}
                   </button>
                 </td>
+<td className="px-4 py-2 text-right flex justify-end gap-2">
 
-                <td className="px-4 py-2 text-right flex justify-end gap-2">
-                  <button
-                    onClick={() => {
-                      setEditing(e);
-                      setOpen(true);
-                    }}
-                    className="px-2 py-1 rounded-lg border hover:bg-slate-50 flex items-center gap-1"
-                  >
-                    <Pencil size={16} /> Sửa
-                  </button>
+  {/* ⭐ Chỉ Admin mới được tạo tài khoản */}
+  {user.role === "admin" && (
+    <button
+      onClick={() => navigate(`/admin/create-account/${e.id}`)}
+      className="px-2 py-1 rounded-lg border border-green-600 text-green-700 hover:bg-green-50 flex items-center gap-1"
+    >
+      <Plus size={16} /> Tạo TK
+    </button>
+  )}
 
-                  <button
-                    onClick={() => handleDelete(e.id!)}
-                    className="px-2 py-1 rounded-lg border border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-1"
-                  >
-                    <X size={16} /> Xóa
-                  </button>
-                </td>
+  <button
+    onClick={() => {
+      setEditing(e);
+      setOpen(true);
+    }}
+    className="px-2 py-1 rounded-lg border hover:bg-slate-50 flex items-center gap-1"
+  >
+    <Pencil size={16} /> Sửa
+  </button>
+
+  <button
+    onClick={() => handleDelete(e.id!)}
+    className="px-2 py-1 rounded-lg border border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-1"
+  >
+    <X size={16} /> Xóa
+  </button>
+</td>
+
               </tr>
             ))}
 
@@ -263,7 +319,7 @@ export default function Employees() {
 }
 
 // =======================================================
-// MODAL COMPONENT – FULL PROFILE + AVATAR + CCCD
+// MODAL COMPONENT
 // =======================================================
 function EmployeeModal({
   initial,
@@ -281,7 +337,6 @@ function EmployeeModal({
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl w-full max-w-2xl shadow-xl p-4 space-y-4">
         
-        {/* Header */}
         <div className="flex items-center justify-between border-b pb-2">
           <h3 className="text-lg font-semibold">
             {initial.id ? "Sửa nhân viên" : "Nhân viên mới"}
@@ -291,10 +346,7 @@ function EmployeeModal({
           </button>
         </div>
 
-        {/* Form */}
         <div className="grid grid-cols-3 gap-4">
-
-          {/* Avatar */}
           <div className="col-span-1 flex flex-col items-center">
             <img
               src={
@@ -313,9 +365,7 @@ function EmployeeModal({
             />
           </div>
 
-          {/* Fields */}
           <div className="col-span-2 space-y-2">
-
             <Input label="Họ tên" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
 
             <Input label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
@@ -380,7 +430,6 @@ function EmployeeModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t pt-3 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 rounded-lg border">
             Hủy

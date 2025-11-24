@@ -10,14 +10,11 @@ import {
   Shield,
 } from "lucide-react";
 import clsx from "clsx";
-import { useSettings } from "../context/SettingsContext"; // 🧩 lấy theme + logo
+import { useSettings } from "../context/SettingsContext";
 
-// =============================
-// DANH SÁCH MENU
-// =============================
 const MENUS = [
   { name: "Trang chủ", icon: LayoutDashboard, to: "/" },
-  { name: "Đơn hàng", icon: Package, to: "/orders" }, 
+  { name: "Đơn hàng", icon: Package, to: "/orders" },
   { name: "Nhân viên", icon: Users, to: "/employees" },
   { name: "Khách hàng", icon: UserRound, to: "/customers" },
   { name: "Sản phẩm", icon: Package, to: "/products" },
@@ -25,39 +22,37 @@ const MENUS = [
   { name: "Báo cáo", icon: FileBarChart2, to: "/reports", roles: ["manager", "admin"] },
   { name: "Admin", icon: Shield, to: "/admin/users", roles: ["admin"] },
   { name: "Phân quyền", icon: Shield, to: "/admin/roles", roles: ["admin"] },
-  // 👇 Chỉ admin mới thấy Cài đặt
   { name: "Cài đặt", icon: Cog, to: "/settings", roles: ["admin"] },
 ];
 
-// =============================
-// COMPONENT SIDEBAR
-// =============================
 export default function Sidebar() {
   const role = localStorage.getItem("role") || "user";
-  const { settings } = useSettings(); // 🌈 lấy thông tin theme, logo, tên công ty
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const { settings } = useSettings();
+
+  // 🔥 Chỉ sửa danh sách menu Nhân viên
+  if (user.role === "employee" && user.employee_id) {
+    const index = MENUS.findIndex((m) => m.name === "Nhân viên");
+    if (index !== -1) {
+      MENUS[index].to = `/employees/profile/${user.employee_id}`;
+    }
+  }
 
   return (
     <aside
       className="w-66 text-white flex flex-col h-screen shadow-lg transition-all"
-      style={{
-        background: settings?.theme_color || "var(--theme-color)",
-      }}
+      style={{ background: settings?.theme_color || "var(--theme-color)" }}
     >
-      {/* ==== Header sidebar ==== */}
       <div className="px-5 h-27 flex items-center gap-2 text-lg font-semibold">
         {settings?.logo_url ? (
-          <img
-            
-          />
+          <img />
         ) : (
           <div className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full text-xs font-bold">
             {settings?.company_name?.[0]?.toUpperCase() || "L"}
           </div>
         )}
-     
       </div>
 
-      {/* ==== Menu ==== */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
         {MENUS.filter((m) => !m.roles || m.roles.includes(role)).map((m) => {
           const Icon = m.icon;
@@ -81,9 +76,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
-      {/* ==== Footer nhỏ ==== */}
-     
     </aside>
   );
 }

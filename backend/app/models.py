@@ -172,12 +172,16 @@ class Admin(Base):
     __tablename__ = "admins"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, nullable=False)
-    full_name = Column(String(100), nullable=True)
-    email = Column(String(100), nullable=True)
-    password = Column(String(255), nullable=False)
+    full_name = Column(String)
+    username = Column(String, unique=True)
+    email = Column(String, unique=True)
+    password = Column(String)
+    role = Column(String, default="employee")
     is_active = Column(Boolean, default=True)
-    role = Column(String(50), default="user")
+
+    # ⭐ GẮN VỚI NHÂN VIÊN
+    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=True)
+    employee = relationship("Employee")
 
 
 # =====================================================

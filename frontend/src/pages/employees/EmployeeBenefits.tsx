@@ -31,10 +31,28 @@ export default function EmployeeBenefits() {
     setLoading(false);
   };
 
-  const register = async (benefitId: number) => {
+  /** ========================
+   *   ĐĂNG KÝ CÓ KIỂM TRA HẠN
+   *  ======================== */
+  const register = async (benefitId: number, b: any) => {
+    const today = new Date();
+    const start = new Date(b.registration_start);
+    const end = new Date(b.registration_end);
+
+    if (today < start) {
+      alert("⛔ Chương trình này chưa đến ngày bắt đầu đăng ký!");
+      return;
+    }
+
+    if (today > end) {
+      alert("⛔ Chương trình này đã hết hạn đăng ký!");
+      return;
+    }
+
     await fetch(`${API_URL}/${benefitId}/register?employee_id=${id}`, {
       method: "POST",
     });
+
     fetchBenefits();
   };
 
@@ -55,7 +73,6 @@ export default function EmployeeBenefits() {
 
   return (
     <div className="flex w-full">
-
       {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r h-screen p-4 space-y-4 sticky top-0">
         <h2 className="text-lg font-semibold text-slate-700 mb-4">Nhân viên</h2>
@@ -63,15 +80,12 @@ export default function EmployeeBenefits() {
         <div className="space-y-2 text-slate-700 text-sm font-medium">
           <MenuItem label="Hồ sơ" onClick={() => navigate(`/employees/profile/${id}`)} />
           <MenuItem label="Chấm công" onClick={() => navigate(`/attendance/${id}`)} />
-
-          {/* FIX HERE: điều hướng đúng sang trang lương */}
           <MenuItem 
-            label="Tiền lương" 
-            onClick={() => navigate(`/employees/salary/${id}`)} 
+            label="Tiền lương"
+            onClick={() => navigate(`/employees/salary/${id}`)}
           />
-
           <MenuItem label="Phúc lợi" active />
-            <MenuItem label="Hợp đồng" onClick={() => navigate(`/employees/${id}/contracts`)} />
+          <MenuItem label="Hợp đồng" onClick={() => navigate(`/employees/${id}/contracts`)} />
         </div>
       </aside>
 
@@ -107,11 +121,10 @@ export default function EmployeeBenefits() {
         </div>
 
         {/* Name */}
-     <div className="mt-24 text-center space-y-1 translate-x-6">
-  <h1 className="text-2xl font-bold text-slate-800">{employee.name}</h1>
-  <p className="text-slate-500">Chương trình phúc lợi</p>
-</div>
-
+        <div className="mt-24 text-center space-y-1 translate-x-6">
+          <h1 className="text-2xl font-bold text-slate-800">{employee.name}</h1>
+          <p className="text-slate-500">Chương trình phúc lợi</p>
+        </div>
 
         {/* Add Benefit (Admin Only) */}
         <div className="mt-6 px-6 flex justify-end">
@@ -126,9 +139,8 @@ export default function EmployeeBenefits() {
         </div>
 
         {/* Benefit List */}
-      <div className="px-6 py-10 ml-6">
-  <div className="bg-white border rounded-xl p-8 shadow-sm">
-
+        <div className="px-6 py-10 ml-6">
+          <div className="bg-white border rounded-xl p-8 shadow-sm">
 
             <h3 className="font-semibold text-lg mb-6">Danh sách chương trình</h3>
 
@@ -149,7 +161,7 @@ export default function EmployeeBenefits() {
                       {b.status === "open" ? (
                         !b.is_registered ? (
                           <button
-                            onClick={() => register(b.id)}
+                            onClick={() => register(b.id, b)}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                           >
                             Đăng ký

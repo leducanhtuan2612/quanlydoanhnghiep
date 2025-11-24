@@ -34,6 +34,9 @@ import EmployeeBenefits from "./pages/employees/EmployeeBenefits";
 import BenefitsPage from "./pages/benefits/BenefitsPage";
 import EmployeeSalary from "./pages/employees/EmployeeSalary";
 import EmployeeContract from "./pages/employees/EmployeeContract";
+import CreateEmployeeAccount from "./pages/employees/CreateEmployeeAccount";
+
+
 
 
 // -------------------------------------------------------
@@ -67,7 +70,8 @@ const router = createBrowserRouter([
       { path: "employees/:id/benefits", element: <EmployeeBenefits /> },
       { path: "employees/:id", element: <EmployeeProfile /> }, 
       { path: "employees/salary/:id", element: <EmployeeSalary /> },
-      
+      { path: "admin/create-account/:id", element: <CreateEmployeeAccount /> },
+
  // 👉 Route mới cho HỢP ĐỒNG
     { path: "employees/:id/contracts", element: <EmployeeContract /> },
 

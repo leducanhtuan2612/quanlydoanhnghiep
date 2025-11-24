@@ -10,6 +10,9 @@ export default function AdminBenefitsPage() {
   const [programs, setPrograms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // thêm/edit dùng chung form
+  const [editId, setEditId] = useState<number | null>(null);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -44,20 +47,50 @@ export default function AdminBenefitsPage() {
       body: JSON.stringify(form),
     });
 
-    setForm({
-      title: "",
-      description: "",
-      registration_start: "",
-      registration_end: "",
-      location: "",
-      status: "open",
-    });
-
+    resetForm();
     fetchPrograms();
     alert("Đã thêm chương trình phúc lợi!");
   };
 
-  /** ĐÓNG CHƯƠNG TRÌNH */
+  /** MỞ CHẾ ĐỘ CHỈNH SỬA */
+  const startEdit = (p: any) => {
+    setEditId(p.id);
+    setForm({
+      title: p.title,
+      description: p.description,
+      registration_start: p.registration_start,
+      registration_end: p.registration_end,
+      location: p.location,
+      status: p.status,
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  /** CẬP NHẬT CHƯƠNG TRÌNH */
+  const updateProgram = async () => {
+    if (!editId) return;
+
+    await fetch(`${API}/${editId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    resetForm();
+    fetchPrograms();
+    alert("Đã cập nhật chương trình!");
+  };
+
+  /** XÓA */
+  const deleteProgram = async (id: number) => {
+    if (!confirm("Bạn có chắc muốn xoá chương trình này?")) return;
+
+    await fetch(`${API}/${id}`, { method: "DELETE" });
+    fetchPrograms();
+  };
+
+  /** ĐÓNG */
   const closeProgram = async (id: number) => {
     await fetch(`${API}/${id}`, {
       method: "PUT",
@@ -67,12 +100,17 @@ export default function AdminBenefitsPage() {
     fetchPrograms();
   };
 
-  /** XOÁ chương trình */
-  const deleteProgram = async (id: number) => {
-    if (!confirm("Bạn có chắc muốn xoá chương trình này?")) return;
-
-    await fetch(`${API}/${id}`, { method: "DELETE" });
-    fetchPrograms();
+  /** Reset form */
+  const resetForm = () => {
+    setEditId(null);
+    setForm({
+      title: "",
+      description: "",
+      registration_start: "",
+      registration_end: "",
+      location: "",
+      status: "open",
+    });
   };
 
   if (loading) return <div className="p-6">Đang tải...</div>;
@@ -82,19 +120,21 @@ export default function AdminBenefitsPage() {
 
       {/* QUAY LẠI */}
       <button
-        onClick={() => navigate("/employees")}
-        className="inline-flex items-center gap-2 text-slate-600 hover:text-black"
-      >
-        <ArrowLeft size={18} />
-        Quay lại
-      </button>
+  onClick={() => navigate(-1)}
+  className="inline-flex items-center gap-2 text-slate-600 hover:text-black"
+>
+  <ArrowLeft size={18} />
+  Quay lại
+</button>
+
 
       <h1 className="text-2xl font-semibold">Quản lý chương trình phúc lợi</h1>
 
-      {/* FORM THÊM */}
+      {/* FORM THÊM / CHỈNH SỬA */}
       <div className="bg-white p-6 rounded-xl border space-y-4 shadow-sm">
-
-        <h2 className="text-lg font-semibold">Thêm chương trình mới</h2>
+        <h2 className="text-lg font-semibold">
+          {editId ? "Chỉnh sửa chương trình" : "Thêm chương trình mới"}
+        </h2>
 
         <input
           type="text"
@@ -146,16 +186,26 @@ export default function AdminBenefitsPage() {
           onChange={(e) => setForm({ ...form, location: e.target.value })}
         />
 
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          onClick={createProgram}
-        >
-          Thêm chương trình
-        </button>
+        <div className="flex gap-3">
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={editId ? updateProgram : createProgram}
+          >
+            {editId ? "Lưu chỉnh sửa" : "Thêm chương trình"}
+          </button>
+
+          {editId && (
+            <button
+              onClick={resetForm}
+              className="px-4 py-2 bg-slate-300 rounded-lg hover:bg-slate-400"
+            >
+              Hủy sửa
+            </button>
+          )}
+        </div>
       </div>
 
       {/* DANH SÁCH */}
-
       <div className="bg-white border p-6 rounded-xl shadow-sm">
         <h2 className="text-lg font-semibold mb-4">Danh sách chương trình</h2>
 
@@ -163,18 +213,16 @@ export default function AdminBenefitsPage() {
           <p className="text-slate-500">Chưa có chương trình nào.</p>
         ) : (
           <ul className="space-y-4">
-
             {programs.map((p) => (
               <li
                 key={p.id}
                 className="border p-4 rounded-lg bg-slate-50 hover:bg-white transition shadow-sm"
               >
                 <div className="flex justify-between items-start">
-
+                  
                   {/* INFO */}
                   <div>
                     <h3 className="font-semibold text-slate-800">{p.title}</h3>
-
                     <p className="text-slate-600 text-sm">{p.description}</p>
 
                     <p className="text-sm text-slate-500 mt-1">
@@ -185,11 +233,9 @@ export default function AdminBenefitsPage() {
 
                     <p className="text-sm mt-1">
                       Trạng thái:{" "}
-                      <span
-                        className={
-                          p.status === "open"
-                            ? "text-green-600 font-semibold"
-                            : "text-red-600 font-semibold"
+                      <span className={p.status === "open"
+                          ? "text-green-600 font-semibold"
+                          : "text-red-600 font-semibold"
                         }
                       >
                         {p.status === "open" ? "Đang mở" : "Đã đóng"}
@@ -199,6 +245,14 @@ export default function AdminBenefitsPage() {
 
                   {/* ACTIONS */}
                   <div className="space-x-3">
+
+                    <button
+                      onClick={() => startEdit(p)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      Chỉnh sửa
+                    </button>
+
                     {p.status === "open" && (
                       <button
                         onClick={() => closeProgram(p.id)}
@@ -214,14 +268,15 @@ export default function AdminBenefitsPage() {
                     >
                       Xoá
                     </button>
-                  </div>
 
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+
     </div>
   );
 }

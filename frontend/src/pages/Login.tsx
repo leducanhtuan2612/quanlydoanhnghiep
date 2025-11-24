@@ -6,10 +6,9 @@ const API = "http://127.0.0.1:8000";
 
 export default function Login() {
   const navigate = useNavigate();
-  const settings = useSettings(); // ⬅ Lấy theme từ backend
+  const settings = useSettings();
 
   const theme = settings?.theme_color || "#2563eb";
-  const logo = settings?.logo_url || "";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,12 +31,24 @@ export default function Login() {
         return;
       }
 
+      // ✅ LƯU ĐÚNG DỮ LIỆU USER
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          username: data.username,
+          role: data.role,
+          employee_id: data.employee_id, // null nếu admin
+        })
+      );
+
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("username", data.username);
-      localStorage.setItem("role", data.role);
+localStorage.setItem("role", data.role);
+localStorage.setItem("username", data.username);
+localStorage.setItem("employee_id", data.employee_id);
 
       navigate("/");
-    } catch {
+    } catch (err) {
+      console.log(err);
       setError("Lỗi kết nối server");
     }
   };
@@ -46,12 +57,17 @@ export default function Login() {
     <div
       className="h-screen flex items-center justify-center"
       style={{
-        background: `linear-gradient(to bottom right, ${theme}, ${theme}99)`
+        background: `linear-gradient(to bottom right, ${theme}, ${theme}99)`,
       }}
     >
-      <form className="bg-white p-8 rounded-xl shadow-xl w-[420px]" onSubmit={handleLogin}>
-      
-        <h1 className="text-2xl font-semibold text-center mb-4" style={{ color: theme }}>
+      <form
+        className="bg-white p-8 rounded-xl shadow-xl w-[420px]"
+        onSubmit={handleLogin}
+      >
+        <h1
+          className="text-2xl font-semibold text-center mb-4"
+          style={{ color: theme }}
+        >
           Đăng nhập hệ thống
         </h1>
 
@@ -59,14 +75,21 @@ export default function Login() {
 
         <div className="mb-3">
           <label className="text-sm">Tên đăng nhập</label>
-          <input className="w-full border px-3 py-2 rounded-lg" value={username}
-                 onChange={(e) => setUsername(e.target.value)} />
+          <input
+            className="w-full border px-3 py-2 rounded-lg"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
         </div>
 
         <div className="mb-4">
           <label className="text-sm">Mật khẩu</label>
-          <input className="w-full border px-3 py-2 rounded-lg" type="password"
-                 value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input
+            className="w-full border px-3 py-2 rounded-lg"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
 
         <button

@@ -214,6 +214,7 @@ class AdminBase(BaseModel):
     email: Optional[str] = None
     is_active: bool = True
     role: Optional[str] = "user"
+    employee_id: Optional[int] = None   # ⭐ thêm vào đây — để optional
 
 
 class AdminCreate(AdminBase):
@@ -227,6 +228,7 @@ class AdminUpdate(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
     password: Optional[str] = None
+    employee_id: Optional[int] = None    # ⭐ cho phép cập nhật nếu role=employee
 
 
 class AdminOut(AdminBase):
@@ -234,7 +236,6 @@ class AdminOut(AdminBase):
 
     class Config:
         from_attributes = True
-
 
 # ==========================================================
 # 📝 CUSTOMER NOTES
@@ -448,3 +449,15 @@ class NotificationOut(BaseModel):
 
     class Config:
         from_attributes = True
+class LoginUser(BaseModel):
+    username: str
+    password: str
+
+
+class RegisterUser(BaseModel):
+    full_name: str | None = None
+    username: str
+    email: str | None = None
+    password: str
+    role: str = "employee"
+    employee_id: int | None = None

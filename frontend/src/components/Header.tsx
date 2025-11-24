@@ -30,8 +30,10 @@ export default function Header() {
 
   const { settings } = useSettings();
 
-  const username = localStorage.getItem("username") || "Người dùng";
-  const role = localStorage.getItem("role") || "user";
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+const username = user.username || "Người dùng";
+const role = user.role || "user";
+
 
   const handleLogout = () => {
     localStorage.clear();
@@ -139,7 +141,10 @@ export default function Header() {
             className="flex items-center gap-2 hover:opacity-100 transition"
           >
             <UserCircle size={28} className="opacity-90" />
-            <span className="text-sm hidden sm:inline">{username} ({role})</span>
+           <span className="text-sm hidden sm:inline">
+  {role === "admin" ? "Quản trị viên" : "Nhân viên"} ({username})
+</span>
+
           </button>
 
           {menuOpen && (
