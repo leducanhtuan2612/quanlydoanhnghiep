@@ -309,22 +309,6 @@ function CRMModal({
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
 
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
-    null
-  );
-  const [sendingEmail, setSendingEmail] = useState(false);
-
-  // Tải danh sách mẫu email
-  useEffect(() => {
-    fetch(`${API}/crm/email-templates`)
-      .then((res) => res.json())
-      .then((list) => {
-        setTemplates(list);
-        if (list.length > 0) setSelectedTemplateId(list[0].id);
-      });
-  }, []);
-
   // Thêm ghi chú
   const handleAddNote = async () => {
     if (!noteTitle.trim()) return;
@@ -376,34 +360,6 @@ function CRMModal({
     }
   };
 
-  // Gửi email marketing
-  const handleSendEmail = async () => {
-    if (!selectedTemplateId) return;
-
-    try {
-      setSendingEmail(true);
-      const res = await fetch(`${API}/crm/send-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          template_id: selectedTemplateId,
-          customer_ids: [data.customer.id],
-        }),
-      });
-
-      if (!res.ok) {
-        alert("Gửi email thất bại, kiểm tra backend hoặc SMTP.");
-        return;
-      }
-
-      alert("Đã gửi email.");
-    } catch {
-      alert("Không thể gửi email.");
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-
   // Format trạng thái đơn hàng
   const formatStatus = (s: string) => {
     switch (s) {
@@ -429,15 +385,9 @@ function CRMModal({
 
         {/* THÔNG TIN KHÁCH */}
         <div className="border rounded-lg p-4 bg-slate-50 mb-6">
-          <p>
-            <b>Email:</b> {data.customer.email}
-          </p>
-          <p>
-            <b>SĐT:</b> {data.customer.phone}
-          </p>
-          <p>
-            <b>Địa chỉ:</b> {data.customer.address}
-          </p>
+          <p><b>Email:</b> {data.customer.email}</p>
+          <p><b>SĐT:</b> {data.customer.phone}</p>
+          <p><b>Địa chỉ:</b> {data.customer.address}</p>
         </div>
 
         {/* THÊM GHI CHÚ */}
@@ -479,7 +429,6 @@ function CRMModal({
                 <button
                   className="text-red-600 hover:bg-red-100 p-1 rounded"
                   onClick={() => deleteNote(n.id)}
-                  title="Xóa ghi chú"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -492,8 +441,9 @@ function CRMModal({
           ))}
         </div>
 
-        {/* EMAIL + LỊCH SỬ */}
+        {/* LỊCH SỬ + EXPORT FILE */}
         <div className="grid grid-cols-12 gap-4">
+
           {/* LỊCH SỬ MUA HÀNG */}
           <div className="col-span-12 lg:col-span-7">
             <h3 className="text-lg font-semibold mb-2">Lịch sử mua hàng</h3>
@@ -503,17 +453,13 @@ function CRMModal({
               )}
 
               {[...data.orders]
-                .sort(
-                  (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
-                )
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                 .map((o) => (
                   <div key={o.id} className="flex justify-between border-b py-2">
                     <div>
                       <p className="font-semibold">Đơn #{o.id}</p>
                       <p className="text-xs text-slate-500">
-                        {formatStatus(o.status)} –{" "}
-                        {new Date(o.date).toLocaleDateString("vi-VN")}
+                        {formatStatus(o.status)} – {new Date(o.date).toLocaleDateString("vi-VN")}
                       </p>
                     </div>
                     <p className="font-bold">
@@ -524,47 +470,26 @@ function CRMModal({
             </div>
           </div>
 
-          {/* EMAIL MARKETING */}
+          {/* XUẤT PDF */}
           <div className="col-span-12 lg:col-span-5">
-            <h3 className="text-lg font-semibold mb-2">Gửi email marketing</h3>
+            <h3 className="text-lg font-semibold mb-2">Xuất file thông tin</h3>
 
             <div className="border rounded-lg p-4 space-y-3 text-sm">
-              <label className="block text-slate-700 text-sm">
-                Mẫu email
-                <select
-                  className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
-                  value={selectedTemplateId ?? ""}
-                  onChange={(e) =>
-                    setSelectedTemplateId(
-                      e.target.value ? Number(e.target.value) : null
-                    )
-                  }
-                >
-                  {templates.length === 0 && (
-                    <option>Chưa có mẫu email</option>
-                  )}
-
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <p className="text-slate-600">
+                Tải xuống thông tin khách hàng hoặc lịch sử mua hàng.
+              </p>
 
               <button
-                onClick={handleSendEmail}
-                disabled={!selectedTemplateId || sendingEmail}
-                className="w-full px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60"
+                onClick={() =>
+                  window.open(`${API}/crm/customers/${data.customer.id}/export-pdf`, "_blank")
+                }
+                className="w-full px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
               >
-                {sendingEmail ? "Đang gửi..." : "Gửi email"}
+                📄 Xuất file PDF
               </button>
-
-              <p className="text-xs text-slate-400">
-                Email được gửi từ backend thông qua SMTP.
-              </p>
             </div>
           </div>
+
         </div>
       </div>
     </div>

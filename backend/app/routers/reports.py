@@ -528,3 +528,294 @@ def export_pdf(db: Session = Depends(database.get_db)):
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=bao_cao_doanh_thu.pdf"},
     )
+# ==========================================================
+# 📊 REPORT: SỐ ĐƠN THEO TRẠNG THÁI
+# ==========================================================
+@router.get("/report/status")
+def order_report_status(db: Session = Depends(database.get_db)):
+
+    data = (
+        db.query(
+            models.Order.status,
+            func.count(models.Order.id).label("count")
+        )
+        .group_by(models.Order.status)
+        .all()
+    )
+
+    return [
+        {
+            "status": status or "Không xác định",
+            "count": int(count or 0)       # ⭐ MUST FIX – ép int
+        }
+        for status, count in data
+    ]
+
+# ==========================================================
+# 📅 REPORT: SỐ ĐƠN THEO THÁNG
+# ==========================================================
+@router.get("/report/month")
+def order_report_month(db: Session = Depends(database.get_db)):
+
+    data = (
+        db.query(
+            extract("month", models.Order.date).label("month"),
+            func.count(models.Order.id).label("count")
+        )
+        .group_by("month")
+        .order_by("month")
+        .all()
+    )
+
+    return [
+        {
+            "month": int(month),
+            "count": int(count or 0)        # ⭐ MUST FIX – ép int
+        }
+        for month, count in data
+    ]
+# ============================================================
+# 📤 EXPORT EXCEL – SUMMARY REPORT
+# ============================================================
+@router.get("/export/summary-excel")
+def export_summary_excel(db: Session = Depends(database.get_db)):
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "BAO CAO TONG HOP"
+
+    ws.merge_cells("A1:D1")
+    ws["A1"] = "BÁO CÁO TỔNG HỢP HỆ THỐNG"
+    ws["A1"].font = openpyxl.styles.Font(size=18, bold=True)
+    ws.append([])
+
+    # ========== LẤY DỮ LIỆU ==========
+
+    employees_count = db.query(models.Employee).count()
+    customers_count = db.query(models.Customer).count()
+    products_count = db.query(models.Product).count()
+    inventory_items = db.query(models.Inventory).all()
+
+    total_stock = sum((i.quantity or 0) for i in inventory_items)
+
+    ws.append(["Thông tin", "Giá trị"])
+    ws.append(["Tổng nhân viên", employees_count])
+    ws.append(["Tổng khách hàng", customers_count])
+    ws.append(["Tổng sản phẩm", products_count])
+    ws.append(["Tổng tồn kho", total_stock])
+
+    ws.append([])
+    ws.append(["TỒN KHO THEO SẢN PHẨM"])
+    ws.append(["Sản phẩm", "Tồn kho"])
+
+    for i in inventory_items:
+        ws.append([
+            i.product.name if i.product else "Unknown",
+            int(i.quantity or 0)
+        ])
+
+    ws.append([])
+    ws.append(["TOP 5 SẢN PHẨM TỒN NHIỀU"])
+    ws.append(["Sản phẩm", "Tồn kho"])
+
+    inventory_sorted = sorted(
+        inventory_items, key=lambda x: x.quantity or 0, reverse=True
+    )[:5]
+
+    for i in inventory_sorted:
+        ws.append([i.product.name, int(i.quantity or 0)])
+
+    # Resize columns
+    for col in ["A", "B", "C", "D"]:
+        ws.column_dimensions[col].width = 25
+
+    stream = BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+
+    return StreamingResponse(
+        stream,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": "attachment; filename=bao_cao_tong_hop.xlsx"
+        },
+    )
+# ============================================================
+# 📄 EXPORT PDF – SUMMARY REPORT (FULL, KHONG DAU)
+# ============================================================
+@router.get("/export/summary-pdf")
+def export_summary_pdf(db: Session = Depends(database.get_db)):
+
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+
+    # FONT
+    p.setFont("Helvetica-Bold", 18)
+    p.drawString(50, 800, "BAO CAO TONG HOP HE THONG")
+
+    p.setFont("Helvetica", 12)
+
+    # ===============================
+    # 1️⃣ LAY DU LIEU
+    # ===============================
+    employees = db.query(models.Employee).count()
+    customers = db.query(models.Customer).count()
+    products = db.query(models.Product).count()
+    inventory_items = db.query(models.Inventory).all()
+    total_stock = sum((i.quantity or 0) for i in inventory_items)
+
+    # Thong ke don hang
+    orders_by_status = (
+        db.query(models.Order.status, func.count(models.Order.id))
+        .group_by(models.Order.status)
+        .all()
+    )
+
+    orders_by_month = (
+        db.query(
+            extract("month", models.Order.date).label("month"),
+            func.count(models.Order.id)
+        )
+        .group_by("month")
+        .order_by("month")
+        .all()
+    )
+
+    # ===============================
+    # 2️⃣ TONG QUAN
+    # ===============================
+    y = 760
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "1. Tong quan he thong")
+    y -= 25
+
+    p.setFont("Helvetica", 12)
+    p.drawString(60, y, f"- Tong nhan vien: {employees}")
+    y -= 20
+    p.drawString(60, y, f"- Tong khach hang: {customers}")
+    y -= 20
+    p.drawString(60, y, f"- Tong san pham: {products}")
+    y -= 20
+    p.drawString(60, y, f"- Tong so luong ton kho: {total_stock}")
+    y -= 30
+
+    # ===============================
+    # 3️⃣ TOP SAN PHAM TON
+    # ===============================
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "2. Top 5 san pham ton kho nhieu nhat")
+    y -= 25
+
+    top5 = sorted(inventory_items, key=lambda x: x.quantity or 0, reverse=True)[:5]
+
+    p.setFont("Helvetica", 12)
+    for item in top5:
+        p.drawString(
+            60, y,
+            f"- {item.product.name if item.product else 'Unknown'}: {int(item.quantity or 0)}"
+        )
+        y -= 20
+
+    y -= 20
+
+    # ===============================
+    # 4️⃣ DANH SACH TON KHO DAY DU
+    # ===============================
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "3. Danh sach ton kho tat ca san pham")
+    y -= 25
+
+    p.setFont("Helvetica", 11)
+
+    for item in inventory_items:
+        text = f"- {item.product.name if item.product else 'Unknown'}: {int(item.quantity or 0)}"
+        p.drawString(60, y, text)
+        y -= 15
+        if y < 40:       # auto xuống trang
+            p.showPage()
+            y = 800
+            p.setFont("Helvetica", 11)
+
+    # ===============================
+    # 5️⃣ SO DON THEO TRANG THAI
+    # ===============================
+    if y < 120:
+        p.showPage()
+        y = 800
+
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "4. So don theo trang thai")
+    y -= 25
+
+    p.setFont("Helvetica", 12)
+    for status, count in orders_by_status:
+        p.drawString(60, y, f"- {status}: {int(count)} don")
+        y -= 20
+
+    y -= 20
+
+    # ===============================
+    # 6️⃣ SO DON THEO THANG
+    # ===============================
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "5. So don theo thang")
+    y -= 25
+
+    for month, count in orders_by_month:
+        p.drawString(60, y, f"- Thang {int(month)}: {int(count)} don")
+        y -= 20
+
+    y -= 30
+
+    # ===============================
+    # 7️⃣ GHI CHU HE THONG
+    # ===============================
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "6. Ghi chu he thong")
+    y -= 25
+
+    p.setFont("Helvetica", 12)
+    p.drawString(60, y, "- Du lieu duoc tong hop tu he thong quan ly doanh nghiep Tuấn ERP.")
+    y -= 20
+    p.drawString(60, y, "- Bao cao duoc xuat tu module Reports.")
+    y -= 20
+    p.drawString(60, y, "- Muc dich su dung: quan tri, lam bao cao, phan tich hoat dong.")
+    y -= 20
+
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=bao_cao_tong_hop.pdf"},
+    )
+# app/routers/reports.py
+@router.get("/forecast")
+def forecast_revenue():
+    # Demo: dự đoán dựa trên tăng trưởng 3 tháng gần nhất
+    import random
+    
+    months = [9, 10, 11]
+    real = [400_000, 620_000, 900_000]
+
+    # Dự đoán tháng 12
+    next_value = int(real[-1] * random.uniform(1.05, 1.25))
+
+    return {
+        "real": [
+            {"month": m, "value": real[i]}
+            for i, m in enumerate(months)
+        ],
+        "forecast": [
+            {"month": 12, "value": next_value}
+        ],
+        "summary": {
+            "predicted_revenue": next_value,
+            "growth_rate": round((next_value - real[-1]) / real[-1] * 100, 1),
+            "suggestion": "Nên nhập thêm nhóm hàng bán chạy để tăng trưởng tốt hơn."
+        }
+    }

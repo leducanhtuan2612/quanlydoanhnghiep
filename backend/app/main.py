@@ -21,9 +21,11 @@ from app.routers import (
     contracts,
     notifications,
     employee_account,
-
+    employee_management,
+    reports_forecast,
 )
 
+from app.routers.employee_management import router as employee_management_router
 
 app = FastAPI(
     title="Hệ thống quản lý doanh nghiệp",
@@ -66,7 +68,8 @@ app.include_router(salary.router)
 app.include_router(contracts.router)
 app.include_router(notifications.router)
 app.include_router(employee_account.router)
-
+app.include_router(employee_management.router)
+app.include_router(reports_forecast.router)
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -16,6 +16,7 @@ const MENUS = [
   { name: "Trang chủ", icon: LayoutDashboard, to: "/" },
   { name: "Đơn hàng", icon: Package, to: "/orders" },
   { name: "Nhân viên", icon: Users, to: "/employees" },
+  { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance", roles: ["admin"] },
   { name: "Khách hàng", icon: UserRound, to: "/customers" },
   { name: "Sản phẩm", icon: Package, to: "/products" },
   { name: "Kho hàng", icon: Boxes, to: "/inventory" },
@@ -53,7 +54,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
+      <nav className="p-5 space-y-4 flex-1 overflow-y-auto">
         {MENUS.filter((m) => !m.roles || m.roles.includes(role)).map((m) => {
           const Icon = m.icon;
           return (
@@ -76,6 +77,16 @@ export default function Sidebar() {
           );
         })}
       </nav>
+  
+     {/* ================= FOOTER SIDEBAR ================= */}
+<div className="mt-auto pl-0 px-4 py-3 border-t border-white/10 text-center">
+  <p className="text-[11px] text-white/60 leading-tight">
+    © {new Date().getFullYear()}
+    <br />
+    {settings?.company_name || "ERP System"}
+  </p>
+</div>
+
     </aside>
   );
 }

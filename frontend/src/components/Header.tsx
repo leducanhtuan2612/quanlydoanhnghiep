@@ -13,7 +13,20 @@ export default function Header() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+const detectIntent = (text: string) => {
+  const t = text.toLowerCase();
 
+  if (t.includes("nhân viên") || t.includes("employee")) return "/employees";
+  if (t.includes("đơn hàng") || t.includes("order")) return "/orders";
+  if (t.includes("sản phẩm") || t.includes("product")) return "/products";
+  if (t.includes("khách hàng") || t.includes("customer")) return "/customers";
+  if (t.includes("báo cáo") || t.includes("report")) return "/report";
+  if (t.includes("doanh thu") || t.includes("revenue")) return "/revenue";
+  if (t.includes("quyền") || t.includes("admin") || t.includes("phân quyền")) return "/admin/roles";
+  if (t.includes("cài đặt") || t.includes("setting")) return "/settings";
+
+  return null;
+};
   // --- Notifications (API) ---
   const [showNotify, setShowNotify] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -141,9 +154,19 @@ const role = user.role || "user";
             className="flex items-center gap-2 hover:opacity-100 transition"
           >
             <UserCircle size={28} className="opacity-90" />
-           <span className="text-sm hidden sm:inline">
-  {role === "admin" ? "Quản trị viên" : "Nhân viên"} ({username})
+          <span className="text-sm hidden sm:inline">
+  {(
+    {
+      admin: "Quản trị viên",
+      manager: "Quản lý",
+      quanly: "Quản lý",
+      user: "Người dùng",
+      employee: "Nhân viên",
+    } as any
+  )[role] || "Người dùng"} ({username})
 </span>
+
+
 
           </button>
 

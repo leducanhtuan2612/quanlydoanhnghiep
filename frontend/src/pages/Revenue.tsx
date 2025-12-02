@@ -6,6 +6,7 @@ import {
   Trophy,
   Users,
   TrendingUp,
+  Sparkles,
 } from "lucide-react";
 
 import ChartBar from "../components/ChartBar";
@@ -19,6 +20,7 @@ export default function Revenue() {
   const [data, setData] = useState<any>(null);
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
+  const [forecast, setForecast] = useState<any>(null);
   const [kpi, setKpi] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,24 +30,31 @@ export default function Revenue() {
   useEffect(() => {
     async function loadAll() {
       try {
-        const [revenueRes, productsRes, customersRes] = await Promise.all([
+        const [
+          revenueRes,
+          productsRes,
+          customersRes,
+          forecastRes,
+        ] = await Promise.all([
           fetch(`${API}/reports/revenue`),
           fetch(`${API}/reports/top-products`),
           fetch(`${API}/reports/top-customers`),
+          fetch(`${API}/reports-forecast/forecast`),  
         ]);
 
         const revenue = await revenueRes.json();
         const products = await productsRes.json();
         const customers = await customersRes.json();
+        const forecastData = await forecastRes.json();
 
         setData(revenue);
         setTopProducts(products);
         setTopCustomers(customers);
+        setForecast(forecastData);
 
         // ======================================================
         // 📌 TÍNH KPI TỔNG HỢP
         // ======================================================
-
         const totalOrders = customers.reduce(
           (a: number, c: any) => a + (c.order_count || 0),
           0
@@ -132,7 +141,7 @@ export default function Revenue() {
       {/* ======================================================
          KPI DASHBOARD
       ======================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
 
         <div className="bg-white p-4 rounded-xl shadow border">
           <p className="text-gray-500 text-sm">Tổng đơn hoàn thành</p>
@@ -158,6 +167,47 @@ export default function Revenue() {
             ₫{kpi?.topRegion.total.toLocaleString("vi-VN")}
           </p>
         </div>
+
+        {/* ⭐ KPI dự đoán doanh thu */}
+        <div className="bg-white p-4 rounded-xl shadow border">
+          <p className="text-gray-500 text-sm flex items-center gap-1">
+            <Sparkles className="text-purple-600" size={16} />
+            Dự đoán tháng sau (AI)
+          </p>
+          <p className="text-2xl font-bold text-purple-700">
+            ₫{forecast?.summary.predicted_revenue.toLocaleString("vi-VN")}
+          </p>
+          <p className="text-green-600 text-sm">
+             {forecast?.summary.growth_rate}% so với tháng trước
+          </p>
+        </div>
+      </div>
+
+      {/* ======================================================
+         BIỂU ĐỒ DỰ ĐOÁN – AI FORECAST
+      ======================================================= */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border">
+        <h2 className="font-semibold flex items-center gap-2 mb-3 text-gray-700">
+          <TrendingUp className="text-indigo-600" />
+          Dự đoán doanh thu (AI Forecast)
+        </h2>
+
+        <ChartLine
+          data={[
+            ...forecast.real.map((r: any) => ({
+              name: `T${r.month}`,
+              value: r.value,
+            })),
+            ...forecast.forecast.map((f: any) => ({
+              name: `T${f.month}*`,
+              value: f.value,
+            })),
+          ]}
+        />
+
+        <p className="text-xs text-gray-500 mt-2 italic">
+          * Giá trị dự đoán bởi AI
+        </p>
       </div>
 
       {/* ======================================================
@@ -211,7 +261,7 @@ export default function Revenue() {
       </div>
 
       {/* ======================================================
-         DOANH THU THEO KHU VỰC – BAR HORIZONTAL
+         DOANH THU THEO KHU VỰC
       ======================================================= */}
       <div className="bg-white p-5 rounded-xl shadow-sm border">
         <h2 className="font-semibold text-gray-700 mb-4">
@@ -235,27 +285,26 @@ export default function Revenue() {
           Top sản phẩm bán chạy
         </h2>
 
-      <table className="w-full text-sm">
-  <thead>
-    <tr className="border-b bg-gray-50">
-      <th className="py-2 px-4 text-left">Sản phẩm</th>
-      <th className="py-2 px-4 text-center">Số lượng</th>
-      <th className="py-2 px-4 text-right">Doanh thu</th>
-    </tr>
-  </thead>
-  <tbody>
-    {topProducts.map((p, index) => (
-      <tr key={index} className="border-b">
-        <td className="py-2 px-4 text-left">{p.product}</td>
-        <td className="py-2 px-4 text-center">{p.total_sold}</td>
-        <td className="py-2 px-4 text-right">
-          ₫{p.revenue.toLocaleString("vi-VN")}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-gray-50">
+              <th className="py-2 px-4 text-left">Sản phẩm</th>
+              <th className="py-2 px-4 text-center">Số lượng</th>
+              <th className="py-2 px-4 text-right">Doanh thu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topProducts.map((p, index) => (
+              <tr key={index} className="border-b">
+                <td className="py-2 px-4 text-left">{p.product}</td>
+                <td className="py-2 px-4 text-center">{p.total_sold}</td>
+                <td className="py-2 px-4 text-right">
+                  ₫{p.revenue.toLocaleString("vi-VN")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* ======================================================
@@ -267,29 +316,39 @@ export default function Revenue() {
           Top khách hàng mua nhiều nhất
         </h2>
 
-       <table className="w-full text-sm">
-  <thead>
-    <tr className="border-b bg-gray-50">
-      <th className="py-2 px-4 text-left">Khách hàng</th>
-      <th className="py-2 px-4 text-center">Số đơn</th>
-      <th className="py-2 px-4 text-right">Tổng chi tiêu</th>
-    </tr>
-  </thead>
-  <tbody>
-    {topProducts.map((p, index) => (
-      <tr key={index} className="border-b">
-        <td className="py-2 px-4 text-left">{p.product}</td>
-        <td className="py-2 px-4 text-center">{p.total_sold}</td>
-        <td className="py-2 px-4 text-right">
-          ₫{p.revenue.toLocaleString("vi-VN")}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-gray-50">
+              <th className="py-2 px-4 text-left">Khách hàng</th>
+              <th className="py-2 px-4 text-center">Số đơn</th>
+              <th className="py-2 px-4 text-right">Tổng chi tiêu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topCustomers.map((c, index) => (
+              <tr key={index} className="border-b">
+                <td className="py-2 px-4 text-left">{c.customer}</td>
+                <td className="py-2 px-4 text-center">{c.order_count}</td>
+                <td className="py-2 px-4 text-right">
+                  ₫{c.total_spent.toLocaleString("vi-VN")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
+      {/* ======================================================
+         GỢI Ý TỪ AI
+      ======================================================= */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border">
+        <h2 className="font-semibold flex items-center gap-2 mb-3 text-gray-700">
+          <Sparkles className="text-purple-600" />
+          Gợi ý từ AI
+        </h2>
+
+        <p className="text-gray-600">{forecast?.summary.suggestion}</p>
+      </div>
     </div>
   );
 }

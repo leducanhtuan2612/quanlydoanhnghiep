@@ -1,59 +1,33 @@
 # app/routers/crm.py
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import datetime
 import os, smtplib, ssl
 from email.mime.text import MIMEText
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
 
 from app import models, schemas, database
 
 router = APIRouter(prefix="/crm", tags=["CRM"])
 get_db = database.get_db
 
-# Nếu bạn có auth, có thể import:
-# from app.dependencies import get_current_admin
-# và thêm vào Depends(get_current_admin) ở các endpoint cần bảo vệ.
 
 
-# ==================== HELPER GỬI EMAIL ====================
-def send_email_smtp(to_email: str, subject: str, body: str):
-    """
-    Gửi email đơn giản bằng SMTP.
-    Cấu hình qua biến môi trường:
-    SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
-    """
-    host = os.getenv("SMTP_HOST", "")
-    port = int(os.getenv("SMTP_PORT", "587"))
-    user = os.getenv("SMTP_USER", "")
-    password = os.getenv("SMTP_PASS", "")
-    from_email = os.getenv("SMTP_FROM", user)
-
-    if not host or not user or not password:
-        # Không cấu hình SMTP -> coi như không gửi được
-        raise RuntimeError("SMTP chưa được cấu hình")
-
-    msg = MIMEText(body, "html", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = from_email
-    msg["To"] = to_email
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP(host, port) as server:
-        server.starttls(context=context)
-        server.login(user, password)
-        server.sendmail(from_email, [to_email], msg.as_string())
-
-
-# ==================== CUSTOMER LIST + THỐNG KÊ ====================
+# ==================== DANH SÁCH KHÁCH HÀNG ====================
 @router.get("/customers", response_model=list[schemas.CustomerOut])
 def list_customers(db: Session = Depends(get_db)):
     return db.query(models.Customer).order_by(models.Customer.id.desc()).all()
 
 
-# ==================== CUSTOMER DETAIL (ghi chú + lịch sử mua) ====================
+# ==================== CHI TIẾT CRM ====================
 @router.get("/customers/{customer_id}/detail", response_model=schemas.CustomerDetailCRM)
 def get_customer_detail(customer_id: int, db: Session = Depends(get_db)):
+
     customer = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
     if not customer:
         raise HTTPException(404, "Khách hàng không tồn tại")
@@ -72,13 +46,12 @@ def get_customer_detail(customer_id: int, db: Session = Depends(get_db)):
         .all()
     )
 
-    # map order -> OrderShort
     orders_short = [
         schemas.OrderShort(
             id=o.id,
             date=o.date,
             amount=o.amount,
-            status=o.status,
+            status=o.status
         )
         for o in orders
     ]
@@ -90,12 +63,9 @@ def get_customer_detail(customer_id: int, db: Session = Depends(get_db)):
     )
 
 
-# ==================== GHI CHÚ KHÁCH HÀNG ====================
+# ==================== TẠO GHI CHÚ ====================
 @router.post("/notes", response_model=schemas.CustomerNoteOut)
-def create_customer_note(
-    payload: schemas.CustomerNoteCreate,
-    db: Session = Depends(get_db),
-):
+def create_customer_note(payload: schemas.CustomerNoteCreate, db: Session = Depends(get_db)):
     customer = db.query(models.Customer).filter(models.Customer.id == payload.customer_id).first()
     if not customer:
         raise HTTPException(404, "Khách hàng không tồn tại")
@@ -104,7 +74,7 @@ def create_customer_note(
         customer_id=payload.customer_id,
         title=payload.title,
         content=payload.content,
-        created_by="admin",  # TODO: lấy từ current_user nếu có
+        created_by="admin",
         created_at=datetime.utcnow(),
     )
     db.add(note)
@@ -113,151 +83,109 @@ def create_customer_note(
     return note
 
 
-@router.get("/notes", response_model=list[schemas.CustomerNoteOut])
-def list_customer_notes(
-    customer_id: int,
-    db: Session = Depends(get_db),
-):
-    return (
+# ==================== XÓA GHI CHÚ ====================
+@router.delete("/notes/{note_id}")
+def delete_note(note_id: int, db: Session = Depends(get_db)):
+    note = db.query(models.CustomerNote).filter(models.CustomerNote.id == note_id).first()
+    if not note:
+        raise HTTPException(404, "Note not found")
+
+    db.delete(note)
+    db.commit()
+    return {"message": "Deleted"}
+
+
+# ==================== EXPORT PDF CHUẨN ĐẸP ====================
+@router.get("/customers/{customer_id}/export-pdf")
+def export_customer_pdf(customer_id: int, db: Session = Depends(get_db)):
+
+    customer = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
+    if not customer:
+        raise HTTPException(404, "Không tìm thấy khách hàng")
+
+    notes = (
         db.query(models.CustomerNote)
         .filter(models.CustomerNote.customer_id == customer_id)
         .order_by(models.CustomerNote.created_at.desc())
         .all()
     )
 
-
-# ==================== EMAIL TEMPLATE ====================
-@router.post("/email-templates", response_model=schemas.EmailTemplateOut)
-def create_email_template(
-    payload: schemas.EmailTemplateCreate,
-    db: Session = Depends(get_db),
-):
-    template = models.EmailTemplate(**payload.model_dump())
-    db.add(template)
-    db.commit()
-    db.refresh(template)
-    return template
-
-
-@router.get("/email-templates", response_model=list[schemas.EmailTemplateOut])
-def list_email_templates(db: Session = Depends(get_db)):
-    return db.query(models.EmailTemplate).order_by(models.EmailTemplate.id.desc()).all()
-
-
-# ==================== GỬI EMAIL MARKETING ====================
-class SendEmailRequest(schemas.BaseModel):
-    template_id: int
-    customer_ids: list[int]
-
-
-@router.post("/send-email")
-def send_marketing_email(
-    body: SendEmailRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-):
-    template = db.query(models.EmailTemplate).filter(
-        models.EmailTemplate.id == body.template_id
-    ).first()
-    if not template:
-        raise HTTPException(404, "Mẫu email không tồn tại")
-
-    customers = db.query(models.Customer).filter(
-        models.Customer.id.in_(body.customer_ids)
-    ).all()
-
-    if not customers:
-        raise HTTPException(400, "Không tìm thấy khách hàng để gửi")
-
-    # Tạo campaign
-    campaign = models.EmailCampaign(
-        name=f"Chiến dịch {template.name} - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}",
-        template_id=template.id,
-        is_active=True,
+    orders = (
+        db.query(models.Order)
+        .filter(models.Order.customer_id == customer_id)
+        .order_by(models.Order.date.desc())
+        .all()
     )
-    db.add(campaign)
-    db.commit()
-    db.refresh(campaign)
 
-    # Tạo log pending
-    for c in customers:
-        log = models.EmailLog(
-            campaign_id=campaign.id,
-            customer_id=c.id,
-            email=c.email or "",
-            status="pending",
-        )
-        db.add(log)
-    db.commit()
+    TMP_DIR = "tmp"
+    os.makedirs(TMP_DIR, exist_ok=True)
+    file_path = f"{TMP_DIR}/customer_{customer_id}.pdf"
 
-    # Hàm chạy nền gửi email
-    def process_campaign(campaign_id: int):
-        session: Session = database.SessionLocal()
-        try:
-            camp = session.query(models.EmailCampaign).filter(models.EmailCampaign.id == campaign_id).first()
-            if not camp:
-                return
+    doc = SimpleDocTemplate(
+        file_path,
+        pagesize=A4,
+        rightMargin=30, leftMargin=30,
+        topMargin=30, bottomMargin=30
+    )
 
-            template_local = camp.template
+    styles = getSampleStyleSheet()
+    story = []
 
-            logs = session.query(models.EmailLog).filter(
-                models.EmailLog.campaign_id == campaign_id
-            ).all()
+    # ==== TIÊU ĐỀ ====
+    story.append(Paragraph(f"<b><font size=16>Thông tin khách hàng: {customer.name}</font></b>", styles["Title"]))
+    story.append(Spacer(1, 16))
 
-            for log in logs:
-                customer = session.query(models.Customer).filter(
-                    models.Customer.id == log.customer_id
-                ).first()
+    # ==== THÔNG TIN CƠ BẢN ====
+    info = f"""
+    <b>Email:</b> {customer.email}<br/>
+    <b>SĐT:</b> {customer.phone or "—"}<br/>
+    <b>Địa chỉ:</b> {customer.address or "—"}<br/>
+    """
+    story.append(Paragraph(info, styles["Normal"]))
+    story.append(Spacer(1, 20))
 
-                if not customer or not customer.email:
-                    log.status = "failed"
-                    log.error_message = "Khách hàng không có email"
-                    log.sent_at = datetime.utcnow()
-                    session.commit()
-                    continue
+    # ==== LỊCH SỬ MUA HÀNG ====
+    story.append(Paragraph("<b><font size=14>Lịch sử mua hàng</font></b>", styles["Heading2"]))
+    story.append(Spacer(1, 10))
 
-                # Render body: thay {{customer_name}}
-                body_html = template_local.body.replace("{{customer_name}}", customer.name)
+    if len(orders) == 0:
+        story.append(Paragraph("Không có đơn hàng.", styles["Normal"]))
+    else:
+        table_data = [["Mã đơn", "Ngày", "Trạng thái", "Tổng tiền"]]
 
-                try:
-                    send_email_smtp(
-                        to_email=customer.email,
-                        subject=template_local.subject,
-                        body=body_html,
-                    )
-                    log.status = "sent"
-                    log.sent_at = datetime.utcnow()
-                except Exception as e:
-                    log.status = "failed"
-                    log.error_message = str(e)
-                    log.sent_at = datetime.utcnow()
+        for o in orders:
+            table_data.append([
+                f"#{o.id}",
+                o.date.strftime("%d/%m/%Y"),
+                o.status,
+                f"{o.amount:,.0f} đ"
+            ])
 
-                session.commit()
-        finally:
-            session.close()
+        table = Table(table_data, colWidths=[60, 80, 120, 100])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+        ]))
 
-    background_tasks.add_task(process_campaign, campaign_id=campaign.id)
+        story.append(table)
 
-    return {"message": "Đã tạo chiến dịch và đang gửi email trong nền."}
+    story.append(Spacer(1, 20))
 
+    # ==== GHI CHÚ ====
+    story.append(Paragraph("<b><font size=14>Ghi chú khách hàng</font></b>", styles["Heading2"]))
+    story.append(Spacer(1, 10))
 
-# ==================== XEM LOG EMAIL ====================
-@router.get("/email-logs", response_model=list[schemas.EmailLogOut])
-def list_email_logs(
-    campaign_id: int | None = None,
-    db: Session = Depends(get_db),
-):
-    q = db.query(models.EmailLog)
-    if campaign_id:
-        q = q.filter(models.EmailLog.campaign_id == campaign_id)
-    return q.order_by(models.EmailLog.id.desc()).all()
-# ==================== XÓA GHI CHÚ ====================
-@router.delete("/notes/{note_id}")
-def delete_note(note_id: int, db: Session = Depends(get_db)):
-    note = db.query(models.CustomerNote).filter(models.CustomerNote.id == note_id).first()
-    if not note:
-        raise HTTPException(status_code=404, detail="Note not found")
+    if len(notes) == 0:
+        story.append(Paragraph("Không có ghi chú.", styles["Normal"]))
+    else:
+        for n in notes:
+            txt = f"<b>- {n.title}</b> ({n.created_at.strftime('%d/%m/%Y %H:%M')})<br/>{n.content or ''}"
+            story.append(Paragraph(txt, styles["Normal"]))
+            story.append(Spacer(1, 6))
 
-    db.delete(note)
-    db.commit()
-    return {"message": "Deleted"}
+    doc.build(story)
+
+    return FileResponse(file_path, media_type="application/pdf", filename=f"customer_{customer_id}.pdf")

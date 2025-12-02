@@ -35,6 +35,12 @@ import BenefitsPage from "./pages/benefits/BenefitsPage";
 import EmployeeSalary from "./pages/employees/EmployeeSalary";
 import EmployeeContract from "./pages/employees/EmployeeContract";
 import CreateEmployeeAccount from "./pages/employees/CreateEmployeeAccount";
+// Quản lý nhân viên (Admin)
+import EmployeeManagementLayout from "./pages/employeeManagement/EmployeeManagementLayout";
+import ManageAttendance from "./pages/employeeManagement/ManageAttendance";
+import ManageSalary from "./pages/employeeManagement/ManageSalary";
+import ManageBenefits from "./pages/employeeManagement/ManageBenefits";
+import ManageContracts from "./pages/employeeManagement/ManageContracts";
 
 
 
@@ -94,6 +100,19 @@ const router = createBrowserRouter([
 
       // SETTINGS
       { path: "settings", element: <Settings /> },
+// -----------------------------------------------------
+// ⭐ QUẢN LÝ NHÂN VIÊN — ADMIN PAGE (tất cả nhân viên)
+// -----------------------------------------------------
+{
+  path: "employee-management",
+  element: <EmployeeManagementLayout />,
+  children: [
+    { path: "attendance", element: <ManageAttendance /> },
+    { path: "salary", element: <ManageSalary /> },
+    { path: "benefits", element: <ManageBenefits /> },
+    { path: "contracts", element: <ManageContracts /> },
+  ],
+},
 
      
     ],

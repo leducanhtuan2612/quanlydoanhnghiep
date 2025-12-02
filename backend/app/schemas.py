@@ -461,3 +461,51 @@ class RegisterUser(BaseModel):
     password: str
     role: str = "employee"
     employee_id: int | None = None
+
+    # ==========================================================
+# 📌 BẢNG LƯƠNG (DÙNG Ở DASHBOARD QUẢN LÝ NHÂN VIÊN)
+# ==========================================================
+class SalaryOut(BaseModel):
+    id: int                  # id nhân viên
+    employee_name: str
+    month: str               # "2025-02"
+    base_salary: float
+    bonus: float
+    deduction: float
+    total: float
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================================
+# 📌 DANH SÁCH PHÚC LỢI THEO NHÂN VIÊN
+# ==========================================================
+class BenefitOut(BaseModel):
+    id: int                  # id của BenefitRegistration
+    employee_name: str
+    title: str
+    start: date
+    end: date
+    status: str              # registered / canceled / ...
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================================
+# 📌 DANH SÁCH HỢP ĐỒNG THEO NHÂN VIÊN
+# ==========================================================
+class ContractOut(BaseModel):
+    id: int
+    employee_name: str
+    contract_type: str
+    start_date: date
+    end_date: date
+    status: str
+    basic_salary: float
+    note: Optional[str] = None
+    file_url: Optional[str] = None  # sau này nếu bạn muốn lưu file
+
+    class Config:
+        from_attributes = True
