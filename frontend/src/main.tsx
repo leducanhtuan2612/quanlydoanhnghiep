@@ -41,6 +41,7 @@ import ManageAttendance from "./pages/employeeManagement/ManageAttendance";
 import ManageSalary from "./pages/employeeManagement/ManageSalary";
 import ManageBenefits from "./pages/employeeManagement/ManageBenefits";
 import ManageContracts from "./pages/employeeManagement/ManageContracts";
+import EmployeeHome from "./pages/employees/EmployeeHome";
 
 
 
@@ -77,6 +78,8 @@ const router = createBrowserRouter([
       { path: "employees/:id", element: <EmployeeProfile /> }, 
       { path: "employees/salary/:id", element: <EmployeeSalary /> },
       { path: "admin/create-account/:id", element: <CreateEmployeeAccount /> },
+
+      { path: "employee/home", element: <EmployeeHome /> },
 
  // 👉 Route mới cho HỢP ĐỒNG
     { path: "employees/:id/contracts", element: <EmployeeContract /> },

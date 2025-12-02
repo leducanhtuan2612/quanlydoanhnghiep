@@ -13,10 +13,11 @@ import clsx from "clsx";
 import { useSettings } from "../context/SettingsContext";
 
 const MENUS = [
-  { name: "Trang chủ", icon: LayoutDashboard, to: "/" },
+  { name: "Trang chủ", icon: LayoutDashboard, to: "/", roles: ["admin"] },
+  { name: "Trang chủ", icon: LayoutDashboard, to: "/employee/home", roles: ["employee"] },
   { name: "Đơn hàng", icon: Package, to: "/orders" },
   { name: "Nhân viên", icon: Users, to: "/employees" },
-  { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance", roles: ["admin"] },
+  { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance",roles: ["manager", "admin"] },
   { name: "Khách hàng", icon: UserRound, to: "/customers" },
   { name: "Sản phẩm", icon: Package, to: "/products" },
   { name: "Kho hàng", icon: Boxes, to: "/inventory" },
