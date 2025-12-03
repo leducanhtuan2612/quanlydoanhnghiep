@@ -86,6 +86,14 @@ class ProductBase(BaseModel):
     description: Optional[str] = None
     image_url: Optional[str] = None
 
+    # ⭐ FIELD MỚI
+    brand: Optional[str] = None
+    supplier: Optional[str] = None
+    size: Optional[str] = None
+    weight: Optional[str] = None
+    usage: Optional[str] = None
+    import_date: Optional[date] = None
+
 
 class ProductCreate(ProductBase):
     pass
@@ -509,3 +517,59 @@ class ContractOut(BaseModel):
 
     class Config:
         from_attributes = True
+# =====================================================
+# ✅ TASKS – SCHEMAS
+# =====================================================
+
+class TaskBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    priority: str = "medium"  # low/medium/high
+    status: str = "todo"      # todo/in_progress/done
+    progress: int = 0
+    deadline: Optional[date] = None
+    assigned_to_id: Optional[int] = None
+
+
+class TaskCreate(TaskBase):
+    created_by_id: Optional[int] = None
+
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
+    progress: Optional[int] = None
+    deadline: Optional[date] = None
+    assigned_to_id: Optional[int] = None
+
+
+class TaskAttachmentOut(BaseModel):
+    id: int
+    file_name: str
+    file_path: str
+    uploaded_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TaskOut(TaskBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    assigned_to_name: Optional[str] = None
+    created_by_id: Optional[int] = None
+    attachments: List[TaskAttachmentOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+class TaskSummaryOut(BaseModel):
+    total: int
+    todo: int
+    in_progress: int
+    done: int
+    overdue: int

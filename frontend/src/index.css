@@ -54,3 +54,90 @@
 .chat-ai {
   @apply bg-gray-200 text-gray-800 rounded-bl-none;
 }
+.page-container {
+  padding: 20px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.task-list {
+  display: grid;
+  gap: 15px;
+}
+
+.task-card {
+  padding: 15px;
+  border-radius: 10px;
+  background: white;
+  display: block;
+  box-shadow: 0 2px 6px #0001;
+  transition: 0.2s;
+}
+
+.task-card:hover {
+  transform: scale(1.01);
+  background: #f7f7f7;
+}
+
+.task-info span {
+  display: block;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.late-warning {
+  margin-top: 10px;
+  color: red;
+  font-weight: 500;
+}
+
+.task-detail-card {
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px #0002;
+}
+
+.progress-block {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.upload-block {
+  margin-top: 15px;
+}
+
+.upload-label {
+  cursor: pointer;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 12px;
+  background: #ddd;
+  border-radius: 6px;
+}
+
+.file-item {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  margin-top: 8px;
+  background: #f3f3f3;
+  border-radius: 6px;
+}

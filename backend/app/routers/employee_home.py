@@ -12,6 +12,7 @@ from app.models import (
     Contract,
     Notification,
     Product,
+    Task,
 )
 
 router = APIRouter(prefix="/employee-home", tags=["Employee Home"])
@@ -21,12 +22,16 @@ router = APIRouter(prefix="/employee-home", tags=["Employee Home"])
 def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
     today = date.today()
 
-    # 1. Nhân viên
+    # =========================
+    # 1. NHÂN VIÊN
+    # =========================
     emp = db.query(Employee).filter(Employee.id == employee_id).first()
     if not emp:
         raise HTTPException(404, "Không tìm thấy nhân viên")
 
-    # 2. Chấm công hôm nay
+    # =========================
+    # 2. CHẤM CÔNG HÔM NAY
+    # =========================
     att_today = (
         db.query(Attendance)
         .filter(Attendance.employee_id == employee_id, Attendance.date == today)
@@ -44,7 +49,9 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
         else None
     )
 
-    # 3. Lịch sử 7 ngày gần nhất
+    # =========================
+    # 3. LỊCH SỬ CHẤM CÔNG (7 NGÀY)
+    # =========================
     history_rows = (
         db.query(Attendance)
         .filter(Attendance.employee_id == employee_id)
@@ -54,11 +61,14 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
     )
 
     attendance_history = [
-        {"date": r.date, "status": r.status} for r in history_rows
+        {"date": str(r.date), "status": r.status} for r in history_rows
     ]
 
-    # 4. KPI trong tháng hiện tại
+    # =========================
+    # 4. KPI THÁNG NÀY
+    # =========================
     year, month = today.year, today.month
+
     month_rows = (
         db.query(Attendance)
         .filter(
@@ -76,7 +86,9 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
         "ontime_days": sum(1 for r in month_rows if r.status == "On time"),
     }
 
-    # 5. Phúc lợi đã đăng ký
+    # =========================
+    # 5. PHÚC LỢI ĐÃ ĐĂNG KÝ
+    # =========================
     regs = (
         db.query(BenefitRegistration)
         .filter(
@@ -88,23 +100,21 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
 
     benefits = []
     for r in regs:
-        p = (
-            db.query(BenefitProgram)
-            .filter(BenefitProgram.id == r.benefit_id)
-            .first()
-        )
+        p = db.query(BenefitProgram).filter(BenefitProgram.id == r.benefit_id).first()
         if p:
             benefits.append(
                 {
                     "id": p.id,
                     "title": p.title,
-                    "registration_end": p.registration_end,
+                    "registration_end": str(p.registration_end),
                     "location": p.location,
                 }
             )
 
-    # 6. Hợp đồng
-    contracts_rows = (
+    # =========================
+    # 6. HỢP ĐỒNG LAO ĐỘNG
+    # =========================
+    contract_rows = (
         db.query(Contract)
         .filter(Contract.employee_id == employee_id)
         .order_by(Contract.start_date.desc())
@@ -115,14 +125,16 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
         {
             "id": c.id,
             "type": c.contract_type,
-            "start": c.start_date,
-            "end": c.end_date,
+            "start": str(c.start_date),
+            "end": str(c.end_date) if c.end_date else None,
             "status": c.status,
         }
-        for c in contracts_rows
+        for c in contract_rows
     ]
 
-    # 7. Thông báo mới nhất
+    # =========================
+    # 7. THÔNG BÁO MỚI NHẤT
+    # =========================
     notifications_rows = (
         db.query(Notification)
         .order_by(Notification.created_at.desc())
@@ -134,13 +146,15 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
         {
             "id": n.id,
             "title": n.title,
-            "time": n.time,
-            "created_at": n.created_at,
+            "time": str(n.time),
+            "created_at": str(n.created_at),
         }
         for n in notifications_rows
     ]
 
-    # 8. Sản phẩm sắp hết (nếu nhân viên phòng kho)
+    # =========================
+    # 8. SẢN PHẨM SẮP HẾT (chỉ phòng kho)
+    # =========================
     low_stock = []
     if emp.department and emp.department.lower() == "kho":
         low_stock_rows = (
@@ -155,6 +169,40 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
             for p in low_stock_rows
         ]
 
+    # =========================
+    # 9. CÔNG VIỆC ĐƯỢC GIAO (TASKS)
+    # =========================
+    task_rows = (
+        db.query(Task)
+        .filter(Task.assigned_to_id == employee_id)
+        .order_by(Task.deadline.asc().nulls_last())
+        .all()
+    )
+
+    tasks = [
+        {
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "status": t.status,
+            "progress": t.progress,
+            "priority": t.priority,
+            "deadline": str(t.deadline) if t.deadline else None,
+        }
+        for t in task_rows
+    ]
+
+    # ---- TÓM TẮT TASKS ----
+    tasks_summary = {
+        "total": len(task_rows),
+        "todo": len([t for t in task_rows if t.status == "todo"]),
+        "in_progress": len([t for t in task_rows if t.status == "in_progress"]),
+        "done": len([t for t in task_rows if t.status == "done"]),
+    }
+
+    # =========================
+    # RETURN FULL PACKAGE
+    # =========================
     return {
         "employee": {
             "id": emp.id,
@@ -170,4 +218,6 @@ def get_employee_home(employee_id: int, db: Session = Depends(get_db)):
         "contracts": contracts,
         "notifications": notifications,
         "low_stock": low_stock,
+        "tasks": tasks,
+        "tasks_summary": tasks_summary,
     }

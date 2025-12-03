@@ -85,7 +85,7 @@ class Customer(Base):
 
 
 # =====================================================
-# 📦 BẢNG SẢN PHẨM
+# 📦 BẢNG SẢN PHẨM (MỞ RỘNG)
 # =====================================================
 class Product(Base):
     __tablename__ = "products"
@@ -93,13 +93,30 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(150), nullable=False)
     category = Column(String(100), nullable=True)
+
     price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
     description = Column(Text, nullable=True)
     image_url = Column(String(255), nullable=True)
 
+    # ⭐ THÔNG TIN MỞ RỘNG
+    brand = Column(String(100), nullable=True)         # thương hiệu
+    supplier = Column(String(150), nullable=True)      # nhà cung cấp
+    origin = Column(String(100), nullable=True)        # xuất xứ
+    size = Column(String(100), nullable=True)          # kích thước
+    weight = Column(String(50), nullable=True)         # trọng lượng
+    material = Column(String(100), nullable=True)      # chất liệu
+    usage = Column(String(255), nullable=True)         # công dụng
+    import_date = Column(Date, nullable=True)          # ngày nhập kho
+    sku = Column(String(100), nullable=True, unique=True)  # mã sản phẩm
+
+    # Thông số kỹ thuật dạng JSON (tuỳ chọn)
+    specs = Column(Text, nullable=True)
+
+    # ⭐ QUAN HỆ
     orders = relationship("Order", back_populates="product", cascade="all, delete")
     inventories = relationship("Inventory", back_populates="product", cascade="all, delete")
+
 
 
 # =====================================================
@@ -337,3 +354,60 @@ class Notification(Base):
     title = Column(String, nullable=False)
     time = Column(String, default="Vừa xong")
     created_at = Column(DateTime, default=datetime.utcnow)
+# =====================================================
+# ✅ CÔNG VIỆC (TASKS)
+# =====================================================
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+
+    # low / medium / high
+    priority = Column(String(20), default="medium")
+
+    # todo / in_progress / done
+    status = Column(String(20), default="todo")
+
+    # 0 - 100
+    progress = Column(Integer, default=0)
+
+    deadline = Column(Date, nullable=True)
+
+    # Nhân viên được giao
+    assigned_to_id = Column(
+        Integer,
+        ForeignKey("employees.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Admin tạo task (có thể null)
+    created_by_id = Column(
+        Integer,
+        ForeignKey("admins.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    assigned_to = relationship("Employee", backref="tasks")
+    created_by = relationship("Admin")
+    attachments = relationship(
+        "TaskAttachment",
+        back_populates="task",
+        cascade="all, delete-orphan",
+    )
+
+
+class TaskAttachment(Base):
+    __tablename__ = "task_attachments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"))
+    file_name = Column(String(255), nullable=False)
+    file_path = Column(String(255), nullable=False)
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    task = relationship("Task", back_populates="attachments")

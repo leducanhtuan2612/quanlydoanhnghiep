@@ -2,25 +2,43 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = "http://127.0.0.1:8000";
+
+type Customer = {
+  id: number;
+  name: string;
+  email?: string;
+};
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  category?: string;
+};
+
 export default function CreateOrder() {
   const navigate = useNavigate();
 
   // ==============================
   // STATE
   // ==============================
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [message, setMessage] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [message, setMessage] = useState<string>("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // 🔍 search state
   const [customerSearch, setCustomerSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
 
+  const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+
   const [form, setForm] = useState({
     customer_id: "",
     product_id: "",
-    date: "",
+    date: today,
     status: "Đang xử lý",
     amount: "",
     quantity: 1,
@@ -35,8 +53,8 @@ export default function CreateOrder() {
     const fetchData = async () => {
       try {
         const [resCus, resPro] = await Promise.all([
-          fetch("http://127.0.0.1:8000/customers"),
-          fetch("http://127.0.0.1:8000/products"),
+          fetch(`${API}/customers`),
+          fetch(`${API}/products`),
         ]);
 
         const customersData = await resCus.json();
@@ -56,10 +74,10 @@ export default function CreateOrder() {
   // ==============================
   // XỬ LÝ FORM
   // ==============================
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     const { name, value } = e.target;
 
-    // Nếu chọn sản phẩm
+    // Nếu chọn sản phẩm (trường hợp dùng <select>, hiện tại ta dùng ô search nên nhánh này ít dùng)
     if (name === "product_id") {
       const product = products.find((p) => p.id === Number(value));
       setSelectedProduct(product || null);
@@ -67,59 +85,107 @@ export default function CreateOrder() {
       setForm((prev) => ({
         ...prev,
         product_id: value,
-        amount: product ? product.price * prev.quantity : "",
-        category: product ? product.category : "Khác",
+        amount: product ? String(product.price * prev.quantity) : "",
+        category: product?.category || "Khác",
       }));
+      return;
     }
 
     // Nếu thay đổi số lượng
-    else if (name === "quantity") {
-      const qty = Number(value) || 1;
+    if (name === "quantity") {
+      const qty = Math.max(1, Number(value) || 1);
+
+      // Kiểm tra không vượt tồn kho (nếu đã chọn sản phẩm)
+      if (selectedProduct && qty > selectedProduct.stock) {
+        setMessage(
+          `⚠️ Số lượng vượt quá tồn kho! Hiện còn ${selectedProduct.stock} sản phẩm.`
+        );
+        return;
+      }
+
       setForm((prev) => ({
         ...prev,
         quantity: qty,
-        amount: selectedProduct ? selectedProduct.price * qty : prev.amount,
+        amount: selectedProduct
+          ? String(selectedProduct.price * qty)
+          : prev.amount,
       }));
+      return;
     }
 
     // Còn lại
-    else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    }
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   // ==============================
   // SUBMIT
   // ==============================
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
+    setMessage("");
 
     if (!form.customer_id || !form.product_id) {
       setMessage("⚠️ Vui lòng chọn khách hàng và sản phẩm!");
       return;
     }
 
+    if (!form.date) {
+      setMessage("⚠️ Vui lòng chọn ngày đặt hàng!");
+      return;
+    }
+
+    const customerId = Number(form.customer_id);
+    const productId = Number(form.product_id);
+    const quantity = Number(form.quantity) || 1;
+
+    const product = products.find((p) => p.id === productId);
+    if (!product) {
+      setMessage("⚠️ Sản phẩm không tồn tại!");
+      return;
+    }
+
+    // Kiểm tra tồn kho lần nữa trước khi gửi (đồng bộ với backend)
+    if (quantity > product.stock) {
+      setMessage(
+        `⚠️ Số lượng đặt (${quantity}) vượt quá tồn kho hiện tại (${product.stock}).`
+      );
+      return;
+    }
+
+    const payload = {
+      customer_id: customerId,
+      product_id: productId,
+      quantity,
+      date: form.date,
+      status: form.status, // BE sẽ chỉ trừ kho khi chuyển sang "Hoàn thành"
+      amount: Number(form.amount || product.price * quantity),
+      category: form.category || product.category || "Khác",
+      region: form.region,
+    };
+
     try {
-      const res = await fetch("http://127.0.0.1:8000/orders", {
+      const res = await fetch(`${API}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          amount: Number(form.amount),
-          customer_id: Number(form.customer_id),
-          product_id: Number(form.product_id),
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        setMessage("✅ Đơn hàng đã được tạo thành công!");
-        setTimeout(() => navigate("/orders"), 1200);
-      } else {
-        const txt = await res.text();
-        console.log(txt);
-        setMessage("❌ Không thể tạo đơn hàng.");
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        console.error("❌ API error:", data);
+        setMessage(
+          data?.detail ||
+            data?.message ||
+            "❌ Không thể tạo đơn hàng. Vui lòng thử lại."
+        );
+        return;
       }
-    } catch {
+
+      setMessage("✅ Đơn hàng đã được tạo thành công!");
+      setTimeout(() => navigate("/orders"), 1200);
+    } catch (err) {
+      console.error(err);
       setMessage("⚠️ Lỗi kết nối server!");
     }
   };
@@ -150,7 +216,9 @@ export default function CreateOrder() {
             placeholder="Nhập tên hoặc email..."
             value={
               form.customer_id
-                ? customers.find((c) => c.id === Number(form.customer_id))?.name
+                ? customers.find(
+                    (c) => c.id === Number(form.customer_id)
+                  )?.name
                 : customerSearch
             }
             onChange={(e) => {
@@ -165,19 +233,26 @@ export default function CreateOrder() {
               {customers
                 .filter(
                   (c) =>
-                    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-                    c.email.toLowerCase().includes(customerSearch.toLowerCase())
+                    c.name
+                      .toLowerCase()
+                      .includes(customerSearch.toLowerCase()) ||
+                    (c.email || "")
+                      .toLowerCase()
+                      .includes(customerSearch.toLowerCase())
                 )
                 .map((c) => (
                   <div
                     key={c.id}
                     onClick={() => {
-                      setForm((prev) => ({ ...prev, customer_id: String(c.id) }));
+                      setForm((prev) => ({
+                        ...prev,
+                        customer_id: String(c.id),
+                      }));
                       setCustomerSearch("");
                     }}
                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer"
                   >
-                    {c.name} ({c.email})
+                    {c.name} {c.email && `(${c.email})`}
                   </div>
                 ))}
             </div>
@@ -193,12 +268,15 @@ export default function CreateOrder() {
             placeholder="Nhập tên sản phẩm..."
             value={
               form.product_id
-                ? products.find((p) => p.id === Number(form.product_id))?.name
+                ? products.find(
+                    (p) => p.id === Number(form.product_id)
+                  )?.name
                 : productSearch
             }
             onChange={(e) => {
               setProductSearch(e.target.value);
-              setForm((f) => ({ ...f, product_id: "" }));
+              setForm((f) => ({ ...f, product_id: "", amount: "" }));
+              setSelectedProduct(null);
             }}
             className="w-full border rounded px-3 py-2"
           />
@@ -213,18 +291,20 @@ export default function CreateOrder() {
                   <div
                     key={p.id}
                     onClick={() => {
+                      const amount = p.price * form.quantity;
                       setForm((prev) => ({
                         ...prev,
                         product_id: String(p.id),
-                        amount: p.price * form.quantity,
-                        category: p.category,
+                        amount: String(amount),
+                        category: p.category || "Khác",
                       }));
                       setSelectedProduct(p);
                       setProductSearch("");
                     }}
                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer"
                   >
-                    {p.name} — {p.price.toLocaleString()}₫ (Tồn: {p.stock})
+                    {p.name} — {p.price.toLocaleString("vi-VN")}₫ (Tồn:{" "}
+                    {p.stock})
                   </div>
                 ))}
             </div>
@@ -233,7 +313,7 @@ export default function CreateOrder() {
 
         {selectedProduct && (
           <p className="text-sm text-gray-500 mt-1">
-            💰 Giá: {selectedProduct.price.toLocaleString()}₫ — Tồn kho:{" "}
+            💰 Giá: {selectedProduct.price.toLocaleString("vi-VN")}₫ — Tồn kho:{" "}
             {selectedProduct.stock}
           </p>
         )}
@@ -254,7 +334,10 @@ export default function CreateOrder() {
             <p className="text-xs text-gray-500 mt-1">
               Tổng tiền tạm tính:{" "}
               <span className="font-semibold text-blue-600">
-                {(selectedProduct.price * form.quantity).toLocaleString()}₫
+                {(selectedProduct.price * form.quantity).toLocaleString(
+                  "vi-VN"
+                )}
+                ₫
               </span>
             </p>
           )}

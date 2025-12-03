@@ -1,3 +1,4 @@
+// frontend/src/components/Sidebar.tsx
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -8,37 +9,61 @@ import {
   FileBarChart2,
   Settings as Cog,
   Shield,
+  ClipboardList,
 } from "lucide-react";
 import clsx from "clsx";
 import { useSettings } from "../context/SettingsContext";
 
-const MENUS = [
-  { name: "Trang chủ", icon: LayoutDashboard, to: "/", roles: ["admin"] },
-  { name: "Trang chủ", icon: LayoutDashboard, to: "/employee/home", roles: ["employee"] },
-  { name: "Đơn hàng", icon: Package, to: "/orders" },
-  { name: "Nhân viên", icon: Users, to: "/employees" },
-  { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance",roles: ["manager", "admin"] },
-  { name: "Khách hàng", icon: UserRound, to: "/customers" },
-  { name: "Sản phẩm", icon: Package, to: "/products" },
-  { name: "Kho hàng", icon: Boxes, to: "/inventory" },
-  { name: "Báo cáo", icon: FileBarChart2, to: "/reports", roles: ["manager", "admin"] },
-  { name: "Admin", icon: Shield, to: "/admin/users", roles: ["admin"] },
-  { name: "Phân quyền", icon: Shield, to: "/admin/roles", roles: ["admin"] },
-  { name: "Cài đặt", icon: Cog, to: "/settings", roles: ["admin"] },
-];
-
 export default function Sidebar() {
-  const role = localStorage.getItem("role") || "user";
+  const role = localStorage.getItem("role") || "employee";
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const { settings } = useSettings();
 
-  // 🔥 Chỉ sửa danh sách menu Nhân viên
-  if (user.role === "employee" && user.employee_id) {
-    const index = MENUS.findIndex((m) => m.name === "Nhân viên");
-    if (index !== -1) {
-      MENUS[index].to = `/employees/profile/${user.employee_id}`;
-    }
-  }
+  // ============================
+  // 👉 MENU DÀNH CHO ADMIN
+  // ============================
+  const ADMIN_MENUS = [
+    { name: "Trang chủ", icon: LayoutDashboard, to: "/" },
+    { name: "Đơn hàng", icon: Package, to: "/orders" },
+    { name: "Nhân viên", icon: Users, to: "/employees" },
+    { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance" },
+    { name: "Khách hàng", icon: UserRound, to: "/customers" },
+    { name: "Quản lý Sản phẩm", icon: Package, to: "/products" },
+    { name: "Kho hàng", icon: Boxes, to: "/inventory" },
+
+    // ⭐ QUẢN LÝ CÔNG VIỆC (ADMIN)
+    { name: "Công việc", icon: ClipboardList, to: "/admin/tasks" },
+
+    { name: "Báo cáo", icon: FileBarChart2, to: "/reports" },
+    { name: "Admin", icon: Shield, to: "/admin/users" },
+    { name: "Phân quyền", icon: Shield, to: "/admin/roles" },
+    { name: "Cài đặt", icon: Cog, to: "/settings" },
+  ];
+
+  // ============================
+  // 👉 MENU DÀNH CHO NHÂN VIÊN
+  // ============================
+ const EMPLOYEE_MENUS = [
+  // ⭐ Hồ sơ cá nhân lên đầu
+ 
+
+  { name: "Trang chủ", icon: LayoutDashboard, to: "/employee/home" },
+   user?.employee_id && {
+    name: "Hồ sơ của tôi",
+    icon: Users,
+    to: `/employees/profile/${user.employee_id}`,
+  },
+  { name: "Khách hàng", icon: UserRound, to: "/customers" },
+  { name: "Đơn hàng", icon: Package, to: "/orders" },
+{ name: "Sản phẩm", icon: Package, to: "/employee/products" },
+
+  { name: "Kho hàng", icon: Boxes, to: "/inventory" },
+  { name: "Công việc", icon: ClipboardList, to: "/employee/tasks" },
+].filter(Boolean);
+  // ============================
+  // 👉 CHỌN MENU THEO ROLE
+  // ============================
+  const MENUS = role === "admin" ? ADMIN_MENUS : EMPLOYEE_MENUS;
 
   return (
     <aside
@@ -56,13 +81,12 @@ export default function Sidebar() {
       </div>
 
       <nav className="p-5 space-y-4 flex-1 overflow-y-auto">
-        {MENUS.filter((m) => !m.roles || m.roles.includes(role)).map((m) => {
+        {MENUS.map((m) => {
           const Icon = m.icon;
           return (
             <NavLink
               key={m.name}
               to={m.to}
-              end={m.to === "/"}
               className={({ isActive }) =>
                 clsx(
                   "flex items-center gap-3 px-3 py-2 rounded-xl transition-colors",
@@ -78,16 +102,15 @@ export default function Sidebar() {
           );
         })}
       </nav>
-  
-     {/* ================= FOOTER SIDEBAR ================= */}
-<div className="mt-auto pl-0 px-4 py-3 border-t border-white/10 text-center">
-  <p className="text-[11px] text-white/60 leading-tight">
-    © {new Date().getFullYear()}
-    <br />
-    {settings?.company_name || "ERP System"}
-  </p>
-</div>
 
+      {/* FOOTER */}
+      <div className="mt-auto px-4 py-3 border-t border-white/10 text-center">
+        <p className="text-[11px] text-white/60 leading-tight">
+          © {new Date().getFullYear()}
+          <br />
+          {settings?.company_name || "ERP System"}
+        </p>
+      </div>
     </aside>
   );
 }
