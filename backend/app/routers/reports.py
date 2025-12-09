@@ -16,7 +16,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 
 # ============================================================
-# 📊 SUMMARY REPORT
+# 📊 SUMMARY REPORT (ĐÃ SỬA FULL, KHÔNG LỖI BIỂU ĐỒ)
 # ============================================================
 @router.get("/summary")
 def get_summary(db: Session = Depends(database.get_db)):
@@ -24,9 +24,10 @@ def get_summary(db: Session = Depends(database.get_db)):
     employees_count = db.query(models.Employee).count()
     customers_count = db.query(models.Customer).count()
     products_count = db.query(models.Product).count()
+
     inventory_items = db.query(models.Inventory).all()
 
-    total_stock = sum((i.quantity or 0) for i in inventory_items)
+    total_stock = sum(int(i.quantity or 0) for i in inventory_items)
 
     overview = {
         "employees_count": employees_count,
@@ -35,25 +36,59 @@ def get_summary(db: Session = Depends(database.get_db)):
         "total_stock": total_stock,
     }
 
+    # =====================================================
+    #  🔧 FIX INVENTORY DATA — CHUẨN HÓA HOÀN TOÀN
+    # =====================================================
+
+    from collections import defaultdict
+    inventory_map = defaultdict(int)
+
+    for item in inventory_items:
+        # Tên sản phẩm luôn là chuỗi an toàn
+        name = item.product.name if item.product else "Unknown"
+
+        # Chuẩn hóa quantity
+        qty = item.quantity
+
+        # convert to int safely
+        try:
+            qty = int(qty)
+        except:
+            qty = 0
+
+        # Không cho âm
+        if qty < 0:
+            qty = 0
+
+        # GỘP SẢN PHẨM TRÙNG
+        inventory_map[name] += qty
+
+    # Chuyển về mảng để Recharts sử dụng
     inventory_chart = [
-        {"name": i.product.name if i.product else "Unknown", "stock": int(i.quantity or 0)}
-        for i in inventory_items
+        {"name": name, "stock": qty}
+        for name, qty in inventory_map.items()
     ]
 
+    # =====================================================
+    #  ENTITY CHART
+    # =====================================================
     entity_chart = [
-        {"name": "Employees", "value": employees_count},
-        {"name": "Customers", "value": customers_count},
-        {"name": "Products", "value": products_count},
+        {"name": "Nhân viên", "value": employees_count},
+        {"name": "Khách hàng", "value": customers_count},
+        {"name": "Sản phẩm", "value": products_count},
     ]
 
+    # TOP 5 tồn kho
     top_products = sorted(inventory_chart, key=lambda x: x["stock"], reverse=True)[:5]
 
     return {
         "overview": overview,
-        "charts": {"inventory": inventory_chart, "entities": entity_chart},
+        "charts": {
+            "inventory": inventory_chart,
+            "entities": entity_chart,
+        },
         "top_products": top_products,
     }
-
 
 # ============================================================
 # 💰 REVENUE REPORT

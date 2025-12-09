@@ -1,5 +1,5 @@
 // frontend/src/components/Sidebar.tsx
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -10,95 +10,149 @@ import {
   Settings as Cog,
   Shield,
   ClipboardList,
+  Info,
 } from "lucide-react";
 import clsx from "clsx";
 import { useSettings } from "../context/SettingsContext";
+import { useState } from "react";
 
 export default function Sidebar() {
   const role = localStorage.getItem("role") || "employee";
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const { settings } = useSettings();
+  const navigate = useNavigate();
 
-  // ============================
-  // 👉 MENU DÀNH CHO ADMIN
-  // ============================
+  const hasEmployeeProfile = Boolean(user?.employee_id);
+  const [tooltip, setTooltip] = useState("");
+
+  // ==========================================
+  // ⭐ MENU CHO EMPLOYEE (FULL QUYỀN)
+  // ==========================================
+  const EMPLOYEE_FULL = [
+    {
+      name: "Trang chủ",
+      icon: LayoutDashboard,
+      to: hasEmployeeProfile ? "/employee/home" : "/employee/home/unassigned",
+      disabled: false,
+    },
+
+    {
+      name: "Hồ sơ của tôi",
+      icon: Users,
+      to: `/employees/profile/${user?.employee_id || 0}`,
+      disabled: !hasEmployeeProfile,
+    },
+
+    { name: "Khách hàng", icon: UserRound, to: "/customers", disabled: false },
+    { name: "Đơn hàng", icon: Package, to: "/orders", disabled: false },
+    { name: "Sản phẩm", icon: Package, to: "/employee/products", disabled: false },
+    { name: "Kho hàng", icon: Boxes, to: "/inventory", disabled: false },
+
+    {
+      name: "Công việc",
+      icon: ClipboardList,
+      to: "/employee/tasks",
+      disabled: !hasEmployeeProfile,
+    },
+  ];
+
+  // ==========================================
+  // ⭐ MENU ADMIN
+  // ==========================================
   const ADMIN_MENUS = [
     { name: "Trang chủ", icon: LayoutDashboard, to: "/" },
     { name: "Đơn hàng", icon: Package, to: "/orders" },
     { name: "Nhân viên", icon: Users, to: "/employees" },
     { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance" },
     { name: "Khách hàng", icon: UserRound, to: "/customers" },
-    { name: "Quản lý Sản phẩm", icon: Package, to: "/products" },
+    { name: "Sản phẩm", icon: Package, to: "/products" },
     { name: "Kho hàng", icon: Boxes, to: "/inventory" },
-
-    // ⭐ QUẢN LÝ CÔNG VIỆC (ADMIN)
     { name: "Công việc", icon: ClipboardList, to: "/admin/tasks" },
-
     { name: "Báo cáo", icon: FileBarChart2, to: "/reports" },
     { name: "Admin", icon: Shield, to: "/admin/users" },
     { name: "Phân quyền", icon: Shield, to: "/admin/roles" },
     { name: "Cài đặt", icon: Cog, to: "/settings" },
   ];
 
-  // ============================
-  // 👉 MENU DÀNH CHO NHÂN VIÊN
-  // ============================
- const EMPLOYEE_MENUS = [
-  // ⭐ Hồ sơ cá nhân lên đầu
- 
+  // ==========================================
+  // ⭐ MENU MANAGER
+  // ==========================================
+  const MANAGER_MENUS = [
+    { name: "Trang chủ", icon: LayoutDashboard, to: "/manager/home" },
+    { name: "Nhân viên", icon: Users, to: "/employees" },
+    { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance" },
+    { name: "Khách hàng", icon: UserRound, to: "/customers" },
+    { name: "Đơn hàng", icon: Package, to: "/orders" },
+    { name: "Sản phẩm", icon: Package, to: "/products" },
+    { name: "Kho hàng", icon: Boxes, to: "/inventory" },
+    { name: "Công việc", icon: ClipboardList, to: "/admin/tasks" },
+    { name: "Báo cáo", icon: FileBarChart2, to: "/reports" },
+  ];
 
-  { name: "Trang chủ", icon: LayoutDashboard, to: "/employee/home" },
-   user?.employee_id && {
-    name: "Hồ sơ của tôi",
-    icon: Users,
-    to: `/employees/profile/${user.employee_id}`,
-  },
-  { name: "Khách hàng", icon: UserRound, to: "/customers" },
-  { name: "Đơn hàng", icon: Package, to: "/orders" },
-{ name: "Sản phẩm", icon: Package, to: "/employee/products" },
+  // ==========================================
+  // ⭐ CHỌN MENU THEO ROLE
+  // ==========================================
+  let MENUS: any[] = [];
 
-  { name: "Kho hàng", icon: Boxes, to: "/inventory" },
-  { name: "Công việc", icon: ClipboardList, to: "/employee/tasks" },
-].filter(Boolean);
-  // ============================
-  // 👉 CHỌN MENU THEO ROLE
-  // ============================
-  const MENUS = role === "admin" ? ADMIN_MENUS : EMPLOYEE_MENUS;
+  if (role === "admin") MENUS = ADMIN_MENUS;
+  else if (role === "manager") MENUS = MANAGER_MENUS;
+  else MENUS = EMPLOYEE_FULL;
 
   return (
     <aside
       className="w-66 text-white flex flex-col h-screen shadow-lg transition-all"
       style={{ background: settings?.theme_color || "var(--theme-color)" }}
     >
+      {/* LOGO */}
       <div className="px-5 h-27 flex items-center gap-2 text-lg font-semibold">
-        {settings?.logo_url ? (
-          <img />
-        ) : (
-          <div className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full text-xs font-bold">
-            {settings?.company_name?.[0]?.toUpperCase() || "L"}
-          </div>
-        )}
+        <div className="w-8 h-8 flex items-center ">
+      
+        </div>
       </div>
 
-      <nav className="p-5 space-y-4 flex-1 overflow-y-auto">
+      {/* MENU */}
+     <nav className="p-5 space-y-4 flex-1 overflow-y-auto no-scrollbar">
+
         {MENUS.map((m) => {
           const Icon = m.icon;
+
+          // Disable nếu employee chưa có employee_id (trừ trang chủ)
+          const isDisabled =
+            !hasEmployeeProfile && role === "employee" && m.name !== "Trang chủ";
+
           return (
-            <NavLink
+            <div
               key={m.name}
-              to={m.to}
-              className={({ isActive }) =>
-                clsx(
-                  "flex items-center gap-3 px-3 py-2 rounded-xl transition-colors",
-                  isActive
-                    ? "bg-white/25 font-medium"
-                    : "hover:bg-white/10 text-white/90 hover:text-white"
-                )
-              }
+              className="relative group"
+              onMouseEnter={() => {
+                if (isDisabled) setTooltip("Tài khoản chưa được gắn với hồ sơ nhân viên");
+              }}
+              onMouseLeave={() => setTooltip("")}
             >
-              <Icon size={20} />
-              <span className="text-sm">{m.name}</span>
-            </NavLink>
+              <button
+                className={clsx(
+                  "w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl transition-colors",
+                  isDisabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-white/10 text-white/90 hover:text-white"
+                )}
+                onClick={() => {
+                  if (!isDisabled) navigate(m.to);
+                }}
+              >
+                <Icon size={20} />
+                <span className="text-sm">{m.name}</span>
+
+                {isDisabled && <Info size={14} className="ml-auto" />}
+              </button>
+
+              {/* Tooltip */}
+              {isDisabled && tooltip && (
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-black text-white text-xs px-3 py-1 rounded shadow-lg whitespace-nowrap">
+                  {tooltip}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>

@@ -16,7 +16,16 @@ export default function ManageBenefits() {
   useEffect(() => {
     fetch("http://127.0.0.1:8000/employee-management/benefits")
       .then((res) => res.json())
-      .then((data) => setRows(data))
+      .then((data) => {
+        // 🔽 Sắp theo ngày bắt đầu (start) mới nhất → cũ nhất
+        const sorted = data.sort((a: BenefitItem, b: BenefitItem) => {
+          const dateA = new Date(a.start);
+          const dateB = new Date(b.start);
+          return dateB.getTime() - dateA.getTime();
+        });
+
+        setRows(sorted);
+      })
       .catch((err) => console.error("Fetch error:", err));
   }, []);
 

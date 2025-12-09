@@ -449,14 +449,16 @@ export default function TaskList() {
             Theo dõi nhiệm vụ hằng ngày trong hệ thống quản lý doanh nghiệp.
           </p>
         </div>
+{role !== "manager" && (
+  <button
+    onClick={openCreateModal}
+    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 shadow-sm"
+  >
+    <Plus size={16} />
+    Thêm công việc
+  </button>
+)}
 
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 shadow-sm"
-        >
-          <Plus size={16} />
-          Thêm công việc
-        </button>
       </div>
 
       {/* SUMMARY */}
@@ -676,33 +678,61 @@ export default function TaskList() {
                       </td>
 
                       <td className="px-4 py-3 align-top">
-                        <div className="flex justify-end gap-2">
-                          {role === "admin" && (
-                            <button
-                              onClick={() => navigate(`/admin/tasks/${t.id}`)}
-                              className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
-                            >
-                              Chi tiết
-                            </button>
-                          )}
+  <div className="flex justify-end gap-2">
 
-                          <button
-                            onClick={() => openEditModal(t)}
-                            className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1"
-                          >
-                            <Edit3 size={12} />
-                            Sửa
-                          </button>
+    {/* ==========================
+         ADMIN + MANAGER → xem chi tiết
+       ========================== */}
+    {(role === "admin" || role === "manager") && (
+      <button
+        onClick={() => navigate(`/admin/tasks/${t.id}`)}
+        className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+      >
+        Chi tiết
+      </button>
+    )}
 
-                          <button
-                            onClick={() => handleDeleteTask(t)}
-                            className="px-2 py-1 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-1"
-                          >
-                            <Trash2 size={12} />
-                            Xoá
-                          </button>
-                        </div>
-                      </td>
+    {/* ==========================
+         ADMIN → sửa
+       ========================== */}
+    {role === "admin" && (
+      <button
+        onClick={() => openEditModal(t)}
+        className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1"
+      >
+        <Edit3 size={12} />
+        Sửa
+      </button>
+    )}
+
+    {/* ==========================
+         ADMIN → xoá
+       ========================== */}
+    {role === "admin" && (
+      <button
+        onClick={() => handleDeleteTask(t)}
+        className="px-2 py-1 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-1"
+      >
+        <Trash2 size={12} />
+        Xoá
+      </button>
+    )}
+
+    {/* ==========================
+         EMPLOYEE → sửa nếu task được giao cho chính họ
+       ========================== */}
+    {role === "employee" && t.assigned_to_id === employeeId && (
+      <button
+        onClick={() => openEditModal(t)}
+        className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1"
+      >
+        <Edit3 size={12} />
+        Sửa
+      </button>
+    )}
+  </div>
+</td>
+
                     </tr>
                   );
                 })}

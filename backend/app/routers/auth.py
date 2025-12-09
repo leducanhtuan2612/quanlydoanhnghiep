@@ -82,28 +82,60 @@ def login(user: schemas.LoginUser, db: Session = Depends(get_db)):
 
 
 # ==============================
-# REGISTER
+# REGISTER — HỖ TRỢ 2 TRƯỜNG HỢP:
+# (1) Tự đăng ký → không cần employee_id
+# (2) Admin tạo tài khoản nhân viên → cần employee_id
 # ==============================
 @router.post("/register", response_model=schemas.AdminOut)
 def register(data: schemas.RegisterUser, db: Session = Depends(get_db)):
 
-    # Check username trùng
+    # Kiểm tra username có tồn tại không
     if db.query(models.Admin).filter(models.Admin.username == data.username).first():
         raise HTTPException(400, "Tên đăng nhập đã tồn tại")
 
-    # Check email trùng (nếu có nhập)
-    if data.email:
-        if db.query(models.Admin).filter(models.Admin.email == data.email).first():
+    # Kiểm tra email
+    email = data.email.strip() if data.email else None
+    if email:
+        if db.query(models.Admin).filter(models.Admin.email == email).first():
             raise HTTPException(400, "Email đã tồn tại")
 
-    # Tạo user mới
+    # ⭐ Trường hợp 1: Người dùng tự đăng ký (role không được gửi)
+    if not data.role:
+        final_role = "employee"
+        final_employee_id = None
+
+    else:
+        # ⭐ Trường hợp 2: Admin tạo tài khoản
+        final_role = data.role
+
+        # Nếu tạo tài khoản nhân viên → phải có employee_id
+        if final_role == "employee":
+            if not data.employee_id:
+                raise HTTPException(400, "employee_id là bắt buộc khi tạo tài khoản nhân viên")
+
+            emp = (
+                db.query(models.Employee)
+                .filter(models.Employee.id == data.employee_id)
+                .first()
+            )
+
+            if not emp:
+                raise HTTPException(404, "Không tìm thấy nhân viên để gán tài khoản")
+
+            final_employee_id = data.employee_id
+
+        else:
+            # manager / admin
+            final_employee_id = None
+
+    # Tạo user
     new_user = models.Admin(
         full_name=data.full_name,
         username=data.username,
-        email=data.email or None,      # Cho phép không có email
+        email=email,
         password=hash_password(data.password),
-        role="employee",               # Tài khoản tự đăng ký = nhân viên
-        employee_id=None,              # ❗ Không bắt buộc có employee_id
+        role=final_role,
+        employee_id=final_employee_id,
         is_active=True
     )
 
@@ -112,11 +144,3 @@ def register(data: schemas.RegisterUser, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
-
-
-    return {
-        "message": "Tạo tài khoản thành công",
-        "username": form.username,
-        "role": form.role,
-        "employee_id": form.employee_id
-    }

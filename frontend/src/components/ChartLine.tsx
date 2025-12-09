@@ -6,13 +6,25 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  Area
+  Area,
 } from "recharts";
 
-export default function ChartLine({ data }: { data: { name: string; value: number }[] }) {
+export default function ChartLine({
+  title = "",
+  data,
+}: {
+  title?: string;   // ⭐ FIX: cho phép optional
+  data: { name: string; value: number }[];
+}) {
   return (
     <div className="bg-white rounded-xl shadow-md border border-slate-200 p-4">
-      <ResponsiveContainer width="100%" height={280}>
+      
+      {/* Chỉ hiển thị title nếu có */}
+      {title && (
+        <h3 className="font-semibold mb-3 text-slate-700">{title}</h3>
+      )}
+
+      <ResponsiveContainer width="100%" height={260}>
         <LineChart data={data}>
           <defs>
             <linearGradient id="lineShadow" x1="0" y1="0" x2="0" y2="1">

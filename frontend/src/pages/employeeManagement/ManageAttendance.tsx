@@ -16,14 +16,21 @@ export default function ManageAttendance() {
   useEffect(() => {
     fetch("http://127.0.0.1:8000/employee-management/attendance")
       .then((res) => res.json())
-      .then((data) => setRows(data))
+      .then((data) => {
+        // SẮP XẾP THEO THỜI GIAN GẦN NHẤT
+        const sorted = data.sort((a: AttendanceItem, b: AttendanceItem) => {
+          const dateA = new Date(a.date + " " + a.check_in);
+          const dateB = new Date(b.date + " " + b.check_in);
+          return dateB.getTime() - dateA.getTime();
+        });
+
+        setRows(sorted);
+      })
       .catch((err) => console.error("Fetch error:", err));
   }, []);
 
-  // Cột hiển thị
   const columns = ["Nhân viên", "Ngày", "Check in", "Check out", "Trạng thái"];
 
-  // Map dữ liệu theo đúng thứ tự cột
   const data = rows.map((r) => ({
     employee_name: r.employee_name,
     date: r.date,

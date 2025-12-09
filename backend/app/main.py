@@ -25,6 +25,7 @@ from app.routers import (
     reports_forecast,
     employee_home,
     tasks,
+    manager,
 )
 
 from app.routers.employee_management import router as employee_management_router
@@ -74,6 +75,7 @@ app.include_router(employee_management.router)
 app.include_router(reports_forecast.router)
 app.include_router(employee_home.router)
 app.include_router(tasks.router)
+app.include_router(manager.router)
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
 app.mount("/static", StaticFiles(directory="static"), name="static")

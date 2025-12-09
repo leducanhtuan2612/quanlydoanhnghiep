@@ -467,8 +467,13 @@ class RegisterUser(BaseModel):
     username: str
     email: str | None = None
     password: str
-    role: str = "employee"
-    employee_id: int | None = None
+
+    # role là tùy chọn — chỉ admin mới gửi
+    role: Optional[str] = None
+
+    # employee_id cũng tùy chọn — chỉ dùng nếu role = employee
+    employee_id: Optional[int] = None
+
 
     # ==========================================================
 # 📌 BẢNG LƯƠNG (DÙNG Ở DASHBOARD QUẢN LÝ NHÂN VIÊN)

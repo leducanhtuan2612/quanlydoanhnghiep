@@ -27,6 +27,9 @@ import EmployeeTaskDetail from "./pages/employees/tasks/EmployeeTaskDetail";
 // EMPLOYEE PRODUCT PAGE
 import EmployeeProducts from "./pages/employees/products/EmployeeProducts";
 
+import ManagerHome from "./pages/manager/ManagerHome";
+import EmployeeHomeUnassigned from "./pages/employees/EmployeeHomeUnassigned";
+
 
 
 // ADMIN TASKS
@@ -94,6 +97,7 @@ const router = createBrowserRouter([
       // EMPLOYEE HOME
       { path: "employee/home", element: <EmployeeHome /> },
       { path: "employee/products", element: <EmployeeProducts /> },
+      { path: "employee/home/unassigned", element: <EmployeeHomeUnassigned /> },
 
       // -----------------------------------------------------
       // ADMIN TASK MANAGEMENT
@@ -106,6 +110,9 @@ const router = createBrowserRouter([
       // -----------------------------------------------------
       { path: "employee/tasks", element: <EmployeeTaskList /> },
       { path: "employee/tasks/:id", element: <EmployeeTaskDetail /> },
+
+
+      { path: "manager/home", element: <ManagerHome /> },
 
       // ADMIN MANAGEMENT (attendance / salary / benefits / contracts)
       {
