@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, X, Check, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const API = "http://127.0.0.1:8000";
 
@@ -53,6 +54,7 @@ export default function Customers() {
 
   const [openCRM, setOpenCRM] = useState(false);
   const [crmData, setCrmData] = useState<CustomerDetailCRM | null>(null);
+  const navigate = useNavigate();
 
   // Load danh sách khách
   useEffect(() => {
@@ -165,31 +167,45 @@ export default function Customers() {
                 <td className="px-4 py-2">{c.email}</td>
                 <td className="px-4 py-2">{c.phone}</td>
                 <td className="px-4 py-2">{c.address}</td>
-                <td className="px-4 py-2 text-right space-x-2">
-                  <button
-                    className="px-2 py-1 border rounded text-blue-600 hover:bg-blue-50"
-                    onClick={() => openCRMDetail(c.id)}
-                  >
-                    📘 Chi tiết
-                  </button>
+               <td className="px-4 py-2 text-right space-x-2">
 
-                  <button
-                    onClick={() => {
-                      setEditing(c);
-                      setOpenModal(true);
-                    }}
-                    className="px-2 py-1 border rounded hover:bg-slate-50 inline-flex items-center gap-1"
-                  >
-                    <Pencil size={14} /> Sửa
-                  </button>
+                      {/* NÚT PHÂN TÍCH KHÁCH HÀNG */}
+                      <button
+                        className="px-2 py-1 border rounded text-purple-600 hover:bg-purple-50"
+                        onClick={() => navigate(`/customers/view/${c.id}`)}
+                      >
+                        📊 Phân tích
+                      </button>
 
-                  <button
-                    onClick={() => deleteCustomer(c.id)}
-                    className="px-2 py-1 border rounded text-red-600 hover:bg-red-50 inline-flex items-center gap-1"
-                  >
-                    <Trash2 size={14} /> Xóa
-                  </button>
-                </td>
+                      {/* NÚT CRM */}
+                      <button
+                        className="px-2 py-1 border rounded text-blue-600 hover:bg-blue-50"
+                        onClick={() => openCRMDetail(c.id)}
+                      >
+                        📘 Chi tiết
+                      </button>
+
+                      {/* Sửa */}
+                      <button
+                        onClick={() => {
+                          setEditing(c);
+                          setOpenModal(true);
+                        }}
+                        className="px-2 py-1 border rounded hover:bg-slate-50 inline-flex items-center gap-1"
+                      >
+                        <Pencil size={14} /> Sửa
+                      </button>
+
+                      {/* Xóa */}
+                      <button
+                        onClick={() => deleteCustomer(c.id)}
+                        className="px-2 py-1 border rounded text-red-600 hover:bg-red-50 inline-flex items-center gap-1"
+                      >
+                        <Trash2 size={14} /> Xóa
+                      </button>
+
+                    </td>
+
               </tr>
             ))}
 

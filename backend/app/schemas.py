@@ -578,3 +578,92 @@ class TaskSummaryOut(BaseModel):
     in_progress: int
     done: int
     overdue: int
+
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+
+class ChatEmployeeOut(BaseModel):
+    id: int
+    name: str
+    position: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+from typing import Optional
+
+class ConversationOut(BaseModel):
+    id: int
+    type: str
+    created_at: datetime
+    other_employee: Optional[ChatEmployeeOut] = None
+
+    class Config:
+        from_attributes = True
+
+
+
+class MessageOut(BaseModel):
+    id: int
+    conversation_id: int
+    sender_id: int
+    sender_name: str        # ⭐ THÊM
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+
+class CreatePrivateConversation(BaseModel):
+    other_employee_id: int
+
+# ==========================================================
+# 📅 WORK SCHEDULE
+# ==========================================================
+class WorkScheduleOut(BaseModel):
+    id: int
+    employee_id: int
+    work_date: date
+    shift: str
+    note: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ==========================================================
+# 📅 LEAVE REQUESTS
+# ==========================================================
+class LeaveRequestCreate(BaseModel):
+    employee_id: int
+    leave_type: str           # annual | sick | unpaid
+    start_date: date
+    end_date: date
+    reason: Optional[str] = None
+
+class LeaveDecision(BaseModel):
+    status: str               # approved | rejected
+    decision_note: Optional[str] = None
+    approved_by_id: Optional[int] = None  # lấy từ admin login nếu có
+
+class LeaveRequestOut(BaseModel):
+    id: int
+    employee_id: int
+    leave_type: str
+    start_date: date
+    end_date: date
+    reason: Optional[str] = None
+    status: str
+
+    approved_by_id: Optional[int] = None
+    decision_note: Optional[str] = None
+    decided_at: Optional[datetime] = None
+
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

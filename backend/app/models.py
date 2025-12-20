@@ -411,3 +411,132 @@ class TaskAttachment(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     task = relationship("Task", back_populates="attachments")
+
+from datetime import datetime
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    ForeignKey,
+    Text,
+)
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy.orm import relationship
+from app.database import Base
+
+# =========================
+# CONVERSATION
+# =========================
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String(20), default="private")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    members = relationship(
+        "ConversationMember",
+        back_populates="conversation",
+        cascade="all, delete-orphan"
+    )
+
+    messages = relationship(
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="Message.created_at"
+    )
+
+
+# =========================
+# CONVERSATION MEMBER
+# =========================
+class ConversationMember(Base):
+    __tablename__ = "conversation_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(
+        Integer,
+        ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    employee_id = Column(
+        Integer,
+        ForeignKey("employees.id", ondelete="CASCADE")
+    )
+
+    conversation = relationship("Conversation", back_populates="members")
+    employee = relationship("Employee")
+
+
+# =========================
+# MESSAGE
+# =========================
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(
+        Integer,
+        ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    sender_id = Column(
+        Integer,
+        ForeignKey("employees.id", ondelete="CASCADE")
+    )
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    conversation = relationship("Conversation", back_populates="messages")
+
+
+# =====================================================
+# 📅 LỊCH LÀM VIỆC (WORK SCHEDULE) - (OPTIONAL)
+# =====================================================
+class WorkSchedule(Base):
+    __tablename__ = "work_schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"), nullable=False)
+
+    work_date = Column(Date, nullable=False)
+    shift = Column(String(20), default="full")  # morning | afternoon | full
+    note = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    employee = relationship("Employee", backref="work_schedules")
+
+
+# =====================================================
+# 📅 ĐƠN XIN NGHỈ (LEAVE REQUEST)
+# =====================================================
+class LeaveRequest(Base):
+    __tablename__ = "leave_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"), nullable=False)
+
+    # annual | sick | unpaid
+    leave_type = Column(String(20), nullable=False)
+
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+
+    reason = Column(Text, nullable=True)
+
+    # pending | approved | rejected | canceled
+    status = Column(String(20), default="pending", nullable=False)
+
+    # ai duyệt
+    approved_by_id = Column(Integer, ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
+    decision_note = Column(Text, nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    employee = relationship("Employee", backref="leave_requests")
+    approved_by = relationship("Admin", foreign_keys=[approved_by_id])

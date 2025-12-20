@@ -30,7 +30,7 @@ import EmployeeProducts from "./pages/employees/products/EmployeeProducts";
 import ManagerHome from "./pages/manager/ManagerHome";
 import EmployeeHomeUnassigned from "./pages/employees/EmployeeHomeUnassigned";
 
-
+import CustomerAnalytics from "./pages/CustomerAnalytics";
 
 // ADMIN TASKS
 import AdminTaskList from "./pages/tasks/TaskList";
@@ -57,11 +57,15 @@ import AttendancePage from "./pages/attendance/Attendance";
 import AdminUsers from "./pages/admin/Users";
 import Roles from "./pages/admin/Roles";
 import AdminBenefitsPage from "./pages/admin/benefits/AdminBenefitsPage";
+import EmployeeLeavePage from "./pages/employees/EmployeeLeavePage";
+import LeaveApprovalPage from "./pages/admin/LeaveApprovalPage"; // HR/Manager
+
+
 
 // SETTINGS CONTEXT
 import { SettingsProvider } from "./context/SettingsContext";
 
-
+import ChatPage from "./pages/chat/ChatPage";
 // -------------------------------------------------------
 // ROUTER CONFIG
 // -------------------------------------------------------
@@ -77,6 +81,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
 
+
+      
+      { path: "/chat", element: <ChatPage />}, 
       // ORDERS
       { path: "orders", element: <OrdersPage /> },
       { path: "orders/new", element: <CreateOrder /> },
@@ -99,11 +106,20 @@ const router = createBrowserRouter([
       { path: "employee/products", element: <EmployeeProducts /> },
       { path: "employee/home/unassigned", element: <EmployeeHomeUnassigned /> },
 
+
+      { path: "employee/leave", element: <EmployeeLeavePage /> },
+    { path: "manager/leave-approval", element: <LeaveApprovalPage /> },
+
+
+      
       // -----------------------------------------------------
       // ADMIN TASK MANAGEMENT
       // -----------------------------------------------------
       { path: "admin/tasks", element: <AdminTaskList /> },
       { path: "admin/tasks/:id", element: <AdminTaskDetail /> },
+
+      
+      { path:"/customers/view/:id", element: <CustomerAnalytics />},
 
       // -----------------------------------------------------
       // EMPLOYEE TASK WORKSPACE

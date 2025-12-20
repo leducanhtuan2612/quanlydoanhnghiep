@@ -26,6 +26,10 @@ from app.routers import (
     employee_home,
     tasks,
     manager,
+    customer_analysis,
+    chat,
+    leave_requests,work_schedule,
+
 )
 
 from app.routers.employee_management import router as employee_management_router
@@ -76,6 +80,10 @@ app.include_router(reports_forecast.router)
 app.include_router(employee_home.router)
 app.include_router(tasks.router)
 app.include_router(manager.router)
+app.include_router(customer_analysis.router)
+app.include_router(chat.router)
+app.include_router(leave_requests.router)
+app.include_router(work_schedule.router)
 
 app.mount("/images", StaticFiles(directory="static/images"), name="images")
 app.mount("/static", StaticFiles(directory="static"), name="static")

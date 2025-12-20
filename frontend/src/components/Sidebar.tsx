@@ -15,6 +15,9 @@ import {
 import clsx from "clsx";
 import { useSettings } from "../context/SettingsContext";
 import { useState } from "react";
+import { MessageCircle } from "lucide-react";
+import { CalendarDays } from "lucide-react";
+
 
 export default function Sidebar() {
   const role = localStorage.getItem("role") || "employee";
@@ -54,6 +57,18 @@ export default function Sidebar() {
       to: "/employee/tasks",
       disabled: !hasEmployeeProfile,
     },
+    {
+    name: "Nghỉ phép",
+    icon: CalendarDays,
+    to: "/employee/leave",
+    disabled: !hasEmployeeProfile,
+  },
+     {
+    name: "Trò chuyện",
+    icon: MessageCircle,
+    to: "/chat",
+    disabled: !hasEmployeeProfile,
+  },
   ];
 
   // ==========================================
@@ -68,6 +83,8 @@ export default function Sidebar() {
     { name: "Sản phẩm", icon: Package, to: "/products" },
     { name: "Kho hàng", icon: Boxes, to: "/inventory" },
     { name: "Công việc", icon: ClipboardList, to: "/admin/tasks" },
+ 
+
     { name: "Báo cáo", icon: FileBarChart2, to: "/reports" },
     { name: "Admin", icon: Shield, to: "/admin/users" },
     { name: "Phân quyền", icon: Shield, to: "/admin/roles" },
@@ -83,9 +100,15 @@ export default function Sidebar() {
     { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance" },
     { name: "Khách hàng", icon: UserRound, to: "/customers" },
     { name: "Đơn hàng", icon: Package, to: "/orders" },
-    { name: "Sản phẩm", icon: Package, to: "/products" },
+    { name: "Sản phẩm", icon: Package, to: "/employee/products", disabled: false },
     { name: "Kho hàng", icon: Boxes, to: "/inventory" },
+    {
+    name: "Duyệt nghỉ phép",
+    icon: CalendarDays,
+    to: "/manager/leave-approval",
+  },
     { name: "Công việc", icon: ClipboardList, to: "/admin/tasks" },
+  
     { name: "Báo cáo", icon: FileBarChart2, to: "/reports" },
   ];
 
