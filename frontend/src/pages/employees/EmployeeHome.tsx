@@ -293,7 +293,7 @@ export default function EmployeeHome() {
               </p>
             </div>
             <div className="bg-slate-50 rounded-xl px-2 py-2 text-center">
-              <p className="text-slate-500">Hoàn thành</p>
+              <p className="text-slate-500">Xong</p>
               <p className="font-semibold text-emerald-600">
                 {tasksSummary.done}
               </p>

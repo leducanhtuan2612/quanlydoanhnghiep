@@ -76,14 +76,19 @@ export default function Sidebar() {
   // ==========================================
   const ADMIN_MENUS = [
     { name: "Trang chủ", icon: LayoutDashboard, to: "/" },
-    { name: "Đơn hàng", icon: Package, to: "/orders" },
+   
     { name: "Nhân viên", icon: Users, to: "/employees" },
     { name: "Quản lý nhân viên", icon: Users, to: "/employee-management/attendance" },
     { name: "Khách hàng", icon: UserRound, to: "/customers" },
+     { name: "Đơn hàng", icon: Package, to: "/orders" },
     { name: "Sản phẩm", icon: Package, to: "/products" },
     { name: "Kho hàng", icon: Boxes, to: "/inventory" },
     { name: "Công việc", icon: ClipboardList, to: "/admin/tasks" },
- 
+ {
+    name: "Duyệt nghỉ phép",
+    icon: CalendarDays,
+    to: "/manager/leave-approval",
+  },
 
     { name: "Báo cáo", icon: FileBarChart2, to: "/reports" },
     { name: "Admin", icon: Shield, to: "/admin/users" },

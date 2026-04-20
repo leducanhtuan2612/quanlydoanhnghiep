@@ -10,6 +10,11 @@ from datetime import date
 from app import models, schemas, database
 from app.utils.notify import push_notify
 from app.routers.inventory import create_export_record, create_return_record
+from fastapi.responses import FileResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import os
+from openpyxl import Workbook
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 get_db = database.get_db
@@ -243,3 +248,120 @@ def get_summary_all(db: Session = Depends(get_db)):
         "by_region": get_summary_by_region(db),
         "by_month": get_summary_by_month(db),
     }
+# ==========================================================
+# 🔍 Lấy chi tiết đơn hàng
+# ==========================================================
+@router.get("/{order_id}")
+def get_order_detail(order_id: int, db: Session = Depends(get_db)):
+    order = (
+        db.query(models.Order)
+        .filter(models.Order.id == order_id)
+        .first()
+    )
+
+    if not order:
+        raise HTTPException(404, "Không tìm thấy đơn hàng")
+
+    product = db.query(models.Product).filter(models.Product.id == order.product_id).first()
+    customer = db.query(models.Customer).filter(models.Customer.id == order.customer_id).first()
+
+    return {
+        "id": order.id,
+        "customer_id": order.customer_id,
+        "customer_name": customer.name if customer else None,
+        "product_id": order.product_id,
+        "product_name": product.name if product else None,
+        "date": order.date,
+        "status": order.status,
+        "quantity": order.quantity,
+        "amount": order.amount,        # ✅ CÓ FIELD NÀY
+        "category": order.category,
+        "region": order.region,
+        "items": [
+            {
+                "product_name": product.name if product else None,
+                "quantity": order.quantity,
+                "price": order.amount
+            }
+        ]
+    }
+# ==========================================================
+# 📄 Xuất PDF đơn hàng
+# ==========================================================
+@router.get("/{order_id}/export/pdf")
+def export_order_pdf(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(404, "Không tìm thấy đơn hàng")
+
+    product = db.query(models.Product).filter(models.Product.id == order.product_id).first()
+    customer = db.query(models.Customer).filter(models.Customer.id == order.customer_id).first()
+
+    file_path = f"order_{order.id}.pdf"
+
+    c = canvas.Canvas(file_path, pagesize=A4)
+    text = c.beginText(40, 800)
+
+    text.setFont("Helvetica", 12)
+    text.textLine(f"CHI TIẾT ĐƠN HÀNG #{order.id}")
+    text.textLine("")
+    text.textLine(f"Khách hàng: {customer.name if customer else ''}")
+    text.textLine(f"Ngày: {order.date}")
+    text.textLine(f"Trạng thái: {order.status}")
+    text.textLine("")
+    text.textLine("SẢN PHẨM:")
+    text.textLine(f"- {product.name if product else ''}")
+    text.textLine(f"  Số lượng: {order.quantity}")
+    text.textLine(f"  Giá: {order.amount:,} VND")
+    text.textLine("")
+    text.textLine(f"TỔNG TIỀN: {order.amount:,} VND")
+
+    c.drawText(text)
+    c.showPage()
+    c.save()
+
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=f"don_hang_{order.id}.pdf"
+    )
+# ==========================================================
+# 📊 Xuất Excel đơn hàng
+# ==========================================================
+@router.get("/{order_id}/export/excel")
+def export_order_excel(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(404, "Không tìm thấy đơn hàng")
+
+    product = db.query(models.Product).filter(models.Product.id == order.product_id).first()
+    customer = db.query(models.Customer).filter(models.Customer.id == order.customer_id).first()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Order Detail"
+
+    ws.append(["Mã đơn hàng", order.id])
+    ws.append(["Khách hàng", customer.name if customer else ""])
+    ws.append(["Ngày", str(order.date)])
+    ws.append(["Trạng thái", order.status])
+    ws.append([])
+    ws.append(["Sản phẩm", "Số lượng", "Giá"])
+
+    ws.append([
+        product.name if product else "",
+        order.quantity,
+        order.amount
+    ])
+
+    ws.append([])
+    ws.append(["Tổng tiền", order.amount])
+
+    file_path = f"order_{order.id}.xlsx"
+    wb.save(file_path)
+
+    return FileResponse(
+        file_path,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=f"don_hang_{order.id}.xlsx"
+    )

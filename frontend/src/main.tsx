@@ -60,6 +60,7 @@ import AdminBenefitsPage from "./pages/admin/benefits/AdminBenefitsPage";
 import EmployeeLeavePage from "./pages/employees/EmployeeLeavePage";
 import LeaveApprovalPage from "./pages/admin/LeaveApprovalPage"; // HR/Manager
 
+import OrderDetailPage from "./pages/OrderDetailPage";
 
 
 // SETTINGS CONTEXT
@@ -87,6 +88,11 @@ const router = createBrowserRouter([
       // ORDERS
       { path: "orders", element: <OrdersPage /> },
       { path: "orders/new", element: <CreateOrder /> },
+     // ORDERS
+      { path: "orders", element: <OrdersPage /> },
+      { path: "orders/new", element: <CreateOrder /> },
+      { path: "orders/:id", element: <OrderDetailPage /> }, 
+
 
       // EMPLOYEE PROFILE MODULE
       { path: "employees", element: <Employees /> },

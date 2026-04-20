@@ -18,7 +18,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // 🧭 Hàm tải danh sách đơn hàng
+  // 📥 Lấy danh sách đơn hàng
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -37,17 +37,16 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  // 🌀 Đổi trạng thái đơn hàng — ĐÃ SỬA JSON BODY
+  // 🔄 Cập nhật trạng thái
   const handleChangeStatus = async (orderId: number, newStatus: string) => {
     try {
       await fetch(`http://127.0.0.1:8000/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }), // ⭐ Cực kỳ quan trọng!
+        body: JSON.stringify({ status: newStatus }),
       });
-
       await fetchOrders();
-    } catch (err) {
+    } catch {
       alert("❌ Lỗi khi cập nhật trạng thái đơn hàng");
     }
   };
@@ -86,11 +85,8 @@ export default function OrdersPage() {
             <tbody>
               {orders.length > 0 ? (
                 orders.map((o) => (
-                  <tr
-                    key={o.id}
-                    className="border-t hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="p-3 font-medium text-slate-700">{o.id}</td>
+                  <tr key={o.id} className="border-t hover:bg-slate-50">
+                    <td className="p-3 font-medium">{o.id}</td>
                     <td className="p-3">{o.customer_name}</td>
                     <td className="p-3">{o.date}</td>
                     <td className="p-3">{o.category}</td>
@@ -99,7 +95,7 @@ export default function OrdersPage() {
                     {/* Trạng thái */}
                     <td className="p-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        className={`px-3 py-1 rounded-full text-sm ${
                           o.status === "Hoàn thành"
                             ? "bg-green-100 text-green-700"
                             : o.status === "Đã hủy"
@@ -119,7 +115,14 @@ export default function OrdersPage() {
                     </td>
 
                     {/* Hành động */}
-                    <td className="p-3 text-center">
+                    <td className="p-3 text-center space-x-2">
+                      <Link
+                        to={`/orders/${o.id}`}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        Xem
+                      </Link>
+
                       <select
                         value={o.status}
                         onChange={(e) =>
