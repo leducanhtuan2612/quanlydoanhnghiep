@@ -176,7 +176,8 @@ Doanh thu theo khu vực
 
 Đơn hàng gần đây
 
-<img width="1919" height="990" alt="image" src="https://github.com/user-attachments/assets/dfe7479f-1ff8-408e-914d-e167ea6511bd" />
+ "<img width="1905" height="981" alt="image" src="https://github.com/user-attachments/assets/400e613b-e4dc-46a6-b9d6-2ab025f92fd6" />
+
 
 🟢 6. Tính năng chính
 ✔ Quản lý Nhân viên
